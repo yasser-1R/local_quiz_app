@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block body_class %}bg-light{% endblock %}
+{% block content %}
+<header class="topbar">
+  <h1>🎓 Nouveau quiz</h1>
+  <a class="btn" href="/teacher">← Retour</a>
+</header>
+
+<main class="container">
+  <div class="card">
+    <div id="editor" data-quiz-id="" data-existing=""></div>
+  </div>
+</main>
+
+<script src="/static/js/quiz_editor.js"></script>
+{% endblock %}

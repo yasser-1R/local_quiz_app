@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block body_class %}bg-light{% endblock %}
+{% block content %}
+<header class="topbar">
+  <h1>🏆 Resultats finals{% if quiz %} — {{ quiz.title }}{% endif %}</h1>
+  <div class="row gap">
+    <a class="btn" href="/teacher/lobby">Retour a la salle d'attente</a>
+    <a class="btn primary" href="/teacher">← Tableau de bord</a>
+  </div>
+</header>
+
+<main class="container">
+  <div class="card">
+    <h2>Classement</h2>
+    {% if not leaderboard %}
+      <p class="muted">Aucun resultat.</p>
+    {% else %}
+    <table class="results">
+      <thead><tr><th>#</th><th>Joueur</th><th>Score</th><th>Bonnes reponses</th></tr></thead>
+      <tbody>
+        {% for p in leaderboard %}
+        <tr>
+          <td>{{ p.rank }}</td>
+          <td>
+            <span class="avatar-pill" style="background: {{ p.avatar_color or '#6366f1' }};">
+              <span class="avatar-char">{{ p.avatar_character or '🦊' }}</span>
+              {% if p.avatar_accessory %}
+                <span class="avatar-acc">{{ p.avatar_accessory }}</span>
+              {% endif %}
+            </span>
+            {{ p.nickname }}
+          </td>
+          <td>{{ p.total_score }}</td>
+          <td>{{ p.correct_answers }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}

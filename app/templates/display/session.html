@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+{% block body_class %}bg-gradient display{% endblock %}
+{% block content %}
+<header class="topbar light">
+  <h1>📺 {% if quiz %}{{ quiz.title }}{% else %}{{ app_title }}{% endif %}</h1>
+  <div><span class="badge big">👥 <span id="count">{{ players|length }}</span></span></div>
+</header>
+
+<main class="container display-main">
+  <div id="view">
+    <div class="projector-waiting card">
+      <h2>En attente des joueurs...</h2>
+      <p class="join-url">{{ join_url }}</p>
+      <p class="muted">Ou tapez: <b>{{ local_ip }}:{{ port }}</b></p>
+      <div class="qr big"><img src="data:image/png;base64,{{ qr_b64 }}" alt="QR code"/></div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
+const ws = new WebSocket(`${wsProto}://${location.host}/ws/display`);
+const $view = document.getElementById('view');
+
+let tick = null;
+let startedAt = 0;
+let limit = 0;
+let phase = 'waiting';
+
+ws.onmessage = ev => {
+  const m = JSON.parse(ev.data);
+  if (m.type === 'player_joined') {
+    const count = document.getElementById('count');
+    if (count) count.textContent = m.total;
+  } else if (m.type === 'quiz_attached') {
+    window.location.reload();
+  } else if (m.type === 'question_started') {
+    phase = 'question';
+    showQuestion(m);
+  } else if (m.type === 'question_ended') {
+    phase = 'chart';
+    showChart(m);
+  } else if (m.type === 'scores_shown') {
+    phase = 'scores';
+    showScores(m);
+  } else if (m.type === 'session_finished') {
+    showFinal(m.board);
+  } else if (m.type === 'quiz_reset') {
+    window.location.reload();
+  }
+};
+
+function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function showQuestion(m){
+  const q = m.question;
+  limit = q.time_limit;
+  startedAt = m.started_at * 1000;
+  clearInterval(tick);
+  $view.innerHTML = `
+    <div class="projector-question">
+      <div style="font-size:28px;color:rgba(255,255,255,0.8);margin-bottom:16px;">Question ${m.index + 1} / ${m.total}</div>
+      <h1 class="q-big">${escapeHtml(q.text)}</h1>
+      <div class="choices-grid" style="max-width:1000px;margin:0 auto 30px;">
+        ${q.choices.map((c,i)=>`<div class="choice c${i} big">${escapeHtml(c.text)}</div>`).join('')}
+      </div>
+      <div class="timer-big" id="timer">${limit}s</div>
+      <div class="progress" style="max-width:500px;margin:20px auto;height:20px;">
+        <div id="bar" class="bar"></div>
+      </div>
+    </div>`;
+  const ends = startedAt + limit * 1000;
+  tick = setInterval(() => {
+    const left = Math.max(0, (ends - Date.now()) / 1000);
+    const t = document.getElementById('timer');
+    const b = document.getElementById('bar');
+    if (t) t.textContent = left.toFixed(0) + 's';
+    if (b) b.style.width = `${(left / limit) * 100}%`;
+    if (left <= 0) { clearInterval(tick); if(t) t.textContent = '0s'; }
+  }, 100);
+}
+
+function showChart(m){
+  clearInterval(tick);
+  const q = m.question;
+  const total = Object.values(m.distribution).reduce((a,b)=>a+b,0) || 1;
+  $view.innerHTML = `
+    <div class="answer-chart" style="max-width:900px;margin:0 auto;">
+      <h3 style="text-align:center;font-size:36px;margin-bottom:30px;">📊 Reponses des joueurs</h3>
+      ${q.choices.map((c,i)=>{
+        const count = m.distribution[c.id] || 0;
+        const pct = Math.round((count / total) * 100);
+        const isCorrect = i === m.correct_choice_index;
+        return `<div class="chart-bar">
+          <div class="bar-label ${isCorrect ? 'correct-label' : ''}">${escapeHtml(c.text)}</div>
+          <div class="bar-track">
+            <div class="bar-fill c${i}" style="width:${pct}%">${count}</div>
+          </div>
+        </div>`;
+      }).join('')}
+      <div style="text-align:center;margin-top:30px;">
+        <div style="font-size:32px;color:#fff;font-weight:800;">
+          Reponse correcte: <span style="color:#22c55e;">${escapeHtml(q.choices[m.correct_choice_index].text)}</span>
+        </div>
+        ${m.explanation ? `<div style="color:rgba(255,255,255,0.8);font-size:20px;margin-top:12px;">${escapeHtml(m.explanation)}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function showScores(m){
+  phase = 'scores';
+  const top10 = m.board.slice(0, 10);
+
+  $view.innerHTML = `
+    <div style="text-align:center;padding:20px;">
+      <h2 style="color:#fff;font-size:40px;margin-bottom:30px;" id="score-title">Classement</h2>
+      <div class="leaderboard-anim" id="leaderboard">
+        ${top10.map((p, i) => {
+          const medal = p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : '';
+          return `<div class="anim-row rank-${p.rank}" style="top:${i * 70}px;">
+            <span class="anim-rank">${medal || '#'+p.rank}</span>
+            <span class="anim-avatar" style="background:${p.avatar_color || '#6366f1'};">${p.avatar_character || '🦊'}</span>
+            <span class="anim-name">${escapeHtml(p.nickname)}</span>
+            <span class="anim-pts" id="pts-${i}">${p.total_score}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+
+  const rows = document.querySelectorAll('.anim-row');
+
+  // Kahoot-style: Start from bottom, pop up one by one
+  rows.forEach((row, i) => {
+    row.style.opacity = '0';
+    row.style.transform = 'translateY(50px) scale(0.5)';
+  });
+
+  // Animate each row with pop effect
+  rows.forEach((row, i) => {
+    setTimeout(() => {
+      row.style.transition = 'all 0.5s cubic-bezier(0.34, 1.7, 0.64, 1)';
+      row.style.opacity = '1';
+      row.style.transform = 'translateY(0) scale(1)';
+      
+      // Add pop flash effect
+      row.classList.add('pop-flash');
+      setTimeout(() => row.classList.remove('pop-flash'), 300);
+      
+      setTimeout(() => {
+        row.style.transform = 'translateY(-3px) scale(1.02)';
+        setTimeout(() => {
+          row.style.transform = 'translateY(0) scale(1)';
+        }, 100);
+      }, 400);
+    }, i * 120);
+  });
+
+  // Animate score counting
+  setTimeout(() => {
+    rows.forEach((row, i) => {
+      const ptsEl = row.querySelector('.anim-pts');
+      if (ptsEl) {
+        animateNumber(ptsEl, 0, top10[i].total_score, 600, i * 50);
+      }
+    });
+  }, 500);
+}
+
+function animateNumber(el, from, to, duration, delay = 0) {
+  setTimeout(() => {
+    const start = performance.now();
+    function update(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(from + (to - from) * eased);
+      if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  }, delay);
+}
+
+function showFinal(board){
+  const top5 = board.slice(0, 5);
+  // Order for podium display: 2nd, 1st, 3rd
+  const podiumOrder = [1, 0, 2];
+  const medals = ['🥈', '🥇', '🥉'];
+
+  $view.innerHTML = `
+    <div style="text-align:center;padding:40px;">
+      <h1 style="color:#fff;font-size:56px;margin-bottom:40px;">🏆 PODIUM FINAL 🏆</h1>
+      <div class="proj-podium">
+        ${podiumOrder.map(idx => {
+          const p = top5[idx];
+          if (!p) return '';
+          const size = idx === 1 ? 'big' : 'small';
+          return `<div class="proj-podium-item ${size}">
+            <div class="proj-podium-avatar" style="background:${p.avatar_color || '#6366f1'};">${p.avatar_character || '🦊'}</div>
+            <div class="proj-podium-medal">${medals[idx]}</div>
+            <div class="proj-podium-name">${escapeHtml(p.nickname)}</div>
+            <div class="proj-podium-score">${p.total_score}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      ${top5.length > 3 ? `
+        <div class="proj-podium-extra">
+          ${top5.slice(3).map((p,i) => `<span>#${i+4}: ${escapeHtml(p.nickname)} - ${p.total_score} pts</span>`).join('')}
+        </div>
+      ` : ''}
+    </div>`;
+}
+
+function animateNumber(elId, from, to, duration) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const start = performance.now();
+  function update(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(from + (to - from) * eased);
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+</script>
+
+<style>
+.projector-question { text-align:center; }
+.projector-question .q-big { font-size:52px; color:#fff; margin-bottom:30px; text-shadow:0 4px 12px rgba(0,0,0,0.3); }
+.projector-question .timer-big { font-size:120px; font-weight:800; color:#fff; text-shadow:0 4px 20px rgba(0,0,0,0.4); }
+
+.projector-waiting { text-align:center; }
+
+.answer-chart { background:rgba(255,255,255,0.15); border-radius:20px; padding:40px; backdrop-filter:blur(10px); }
+.answer-chart .chart-bar { display:flex; align-items:center; margin-bottom:16px; gap:16px; }
+.answer-chart .bar-label { width:150px; font-size:22px; font-weight:700; color:#fff; text-align:left; }
+.answer-chart .correct-label { color:#22c55e !important; }
+.answer-chart .bar-track { flex:1; height:50px; background:rgba(255,255,255,0.2); border-radius:10px; overflow:hidden; }
+.answer-chart .bar-fill { height:100%; border-radius:10px; display:flex; align-items:center; justify-content:flex-end; padding:0 16px; font-weight:800; font-size:20px; color:#fff; min-width:60px; transition:width 1s ease-out; }
+.answer-chart .bar-fill.c0 { background:#ef4444; }
+.answer-chart .bar-fill.c1 { background:#3b82f6; }
+.answer-chart .bar-fill.c2 { background:#eab308; }
+.answer-chart .bar-fill.c3 { background:#22c55e; }
+
+/* Animated leaderboard */
+.leaderboard-anim {
+  display:flex; flex-direction:column; gap:12px;
+  max-width:600px; margin:0 auto;
+  height: 700px;
+  position: relative;
+}
+.anim-row {
+  display:flex; align-items:center; gap:16px;
+  background:rgba(255,255,255,0.15); padding:16px 24px; border-radius:16px;
+  color:#fff; font-size:24px; font-weight:700;
+  position: absolute; left:0; right:0;
+  transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease;
+}
+.anim-row:nth-child(1) { top: 0; }
+.anim-row:nth-child(2) { top: 70px; }
+.anim-row:nth-child(3) { top: 140px; }
+.anim-row:nth-child(4) { top: 210px; }
+.anim-row:nth-child(5) { top: 280px; }
+.anim-row:nth-child(6) { top: 350px; }
+.anim-row:nth-child(7) { top: 420px; }
+.anim-row:nth-child(8) { top: 490px; }
+.anim-row:nth-child(9) { top: 560px; }
+.anim-row:nth-child(10) { top: 630px; }
+
+.anim-row.rank-1 { background:linear-gradient(135deg,rgba(254,243,199,0.95),rgba(253,230,138,0.95)); color:#92400e; }
+.anim-row.rank-2 { background:linear-gradient(135deg,rgba(243,244,246,0.95),rgba(209,213,219,0.95)); color:#374151; }
+.anim-row.rank-3 { background:linear-gradient(135deg,rgba(253,231,211,0.95),rgba(254,215,170,0.95)); color:#9a3412; }
+
+.anim-row.pop-flash { animation: popFlash 0.3s ease-out; }
+@keyframes popFlash {
+  0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.8); }
+  50% { box-shadow: 0 0 30px 10px rgba(255,255,255,0.6); }
+  100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+}
+
+.anim-row.top-3 { box-shadow:0 8px 32px rgba(0,0,0,0.3); }
+.anim-row.rank-1.top-3 { transform:scale(1.05); z-index:10; }
+.anim-row.moved-up { background:linear-gradient(135deg,rgba(34,197,94,0.4),rgba(22,163,74,0.4)) !important; }
+.anim-row.moved-down { background:linear-gradient(135deg,rgba(239,68,68,0.4),rgba(220,38,38,0.4)) !important; }
+
+.anim-rank { width:60px; font-size:28px; font-weight:800; }
+.anim-avatar { width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; box-shadow:0 4px 12px rgba(0,0,0,0.2); }
+.anim-name { flex:1; font-size:22px; }
+.anim-pts { font-size:28px; font-weight:800; color:#fbbf24; text-shadow:0 2px 8px rgba(0,0,0,0.3); min-width:80px; text-align:right; }
+.anim-change { font-size:24px; font-weight:800; min-width:80px; text-align:left; }
+.moved-up .anim-change { color:#22c55e; }
+.moved-down .anim-change { color:#ef4444; }
+
+.projector-score-list { display:flex; flex-direction:column; gap:10px; }
+.proj-score-row {
+  display:flex; align-items:center; gap:16px;
+  background:rgba(255,255,255,0.15); padding:14px 20px; border-radius:12px;
+  color:#fff; font-size:22px; font-weight:700;
+}
+.proj-score-row.rank-1 { background:linear-gradient(135deg,rgba(254,243,199,0.9),rgba(253,230,138,0.9)); color:#92400e; }
+.proj-score-row.rank-2 { background:linear-gradient(135deg,rgba(243,244,246,0.9),rgba(209,213,219,0.9)); color:#374151; }
+.proj-score-row.rank-3 { background:linear-gradient(135deg,rgba(253,231,211,0.9),rgba(254,215,170,0.9)); color:#9a3412; }
+.proj-score-row.moved { animation:pulse 0.5s ease-out; }
+.proj-rank { width:50px; font-size:24px; }
+.proj-avatar { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; }
+.proj-name { flex:1; }
+.proj-pts { font-size:26px; color:#fbbf24; text-shadow:0 2px 8px rgba(0,0,0,0.3); }
+
+.projector-score-list.podium .proj-score-row:first-child { transform:scale(1.1); box-shadow:0 10px 40px rgba(0,0,0,0.3); }
+
+@keyframes slideUp { from { transform:translateY(40px); opacity:0; background:rgba(34,197,94,0.5); } to { transform:translateY(0); opacity:1; } }
+@keyframes slideDown { from { transform:translateY(-40px); opacity:0; background:rgba(239,68,68,0.5); } to { transform:translateY(0); opacity:1; } }
+@keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }
+@keyframes popIn { 0% { transform:scale(0.8); opacity:0; } 70% { transform:scale(1.1); } 100% { transform:scale(1); opacity:1; } }
+
+/* Projector podium */
+.proj-podium { display:flex; justify-content:center; align-items:flex-end; gap:30px; margin-bottom:40px; }
+.proj-podium-item { text-align:center; padding:25px 35px; border-radius:20px; background:rgba(255,255,255,0.15); backdrop-filter:blur(10px); }
+.proj-podium-item.big { background:linear-gradient(135deg,rgba(254,243,199,0.95),rgba(253,230,138,0.95)); padding:40px 60px; transform:scale(1.15); box-shadow:0 15px 50px rgba(0,0,0,0.3); }
+.proj-podium-item.small { padding:20px 30px; }
+.proj-podium-avatar { width:90px; height:90px; border-radius:50%; margin:0 auto 15px; font-size:55px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 25px rgba(0,0,0,0.25); }
+.proj-podium-item.big .proj-podium-avatar { width:120px; height:120px; font-size:70px; }
+.proj-podium-item.small .proj-podium-avatar { width:70px; height:70px; font-size:42px; }
+.proj-podium-medal { font-size:50px; margin-bottom:8px; }
+.proj-podium-item.big .proj-podium-medal { font-size:65px; }
+.proj-podium-item.small .proj-podium-medal { font-size:40px; }
+.proj-podium-name { font-size:24px; font-weight:800; color:#fff; text-shadow:0 2px 10px rgba(0,0,0,0.3); }
+.proj-podium-item.big .proj-podium-name { font-size:30px; }
+.proj-podium-item.small .proj-podium-name { font-size:20px; }
+.proj-podium-score { font-size:22px; font-weight:700; color:#fbbf24; margin-top:8px; text-shadow:0 2px 10px rgba(0,0,0,0.3); }
+.proj-podium-item.big .proj-podium-score { font-size:28px; }
+.proj-podium-item.small .proj-podium-score { font-size:18px; }
+.proj-podium-extra { display:flex; justify-content:center; gap:40px; font-size:20px; color:rgba(255,255,255,0.8); }
+</style>
+{% endblock %}

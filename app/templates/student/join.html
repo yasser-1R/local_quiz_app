@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block body_class %}bg-gradient center{% endblock %}
+{% block content %}
+<div class="card avatar-card">
+  <h1>🎮 Rejoindre le quiz</h1>
+  <p class="muted">{{ app_title }}</p>
+
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+  <div class="avatar-preview-wrap">
+    <div id="preview" class="avatar-preview"
+         style="background: var(--preview-color, #6366f1);">
+      <span id="previewChar" class="avatar-char">🦊</span>
+      <span id="previewAcc" class="avatar-acc"></span>
+    </div>
+  </div>
+
+  <form method="post" action="/join" id="joinForm">
+    <label>Votre pseudo</label>
+    <input name="nickname" autocomplete="off" maxlength="20" required autofocus
+           value="{{ nickname }}" placeholder="Ex: yasser" />
+
+    <h3 class="picker-title">Personnage</h3>
+    <div class="picker-grid" id="charGrid">
+      {% for ch in avatar_characters %}
+        <button type="button" class="picker-cell char-cell{% if loop.first %} selected{% endif %}"
+                data-char="{{ ch }}">{{ ch }}</button>
+      {% endfor %}
+    </div>
+
+    <h3 class="picker-title">Couleur</h3>
+    <div class="color-row" id="colorRow">
+      {% for c in avatar_colors %}
+        <button type="button" class="color-dot{% if loop.first %} selected{% endif %}"
+                data-color="{{ c.value }}" style="background:{{ c.value }};"
+                aria-label="{{ c.name }}"></button>
+      {% endfor %}
+    </div>
+
+    <h3 class="picker-title">Accessoire</h3>
+    <div class="picker-grid small" id="accGrid">
+      {% for a in avatar_accessories %}
+        <button type="button"
+                class="picker-cell acc-cell{% if loop.first %} selected{% endif %}"
+                data-acc="{{ a.value }}">
+          {% if a.value %}{{ a.value }}{% else %}∅{% endif %}
+        </button>
+      {% endfor %}
+    </div>
+
+    <input type="hidden" name="avatar_character" id="avatarChar"
+           value="{{ avatar_characters[0] }}" />
+    <input type="hidden" name="avatar_color" id="avatarColor"
+           value="{{ avatar_colors[0].value }}" />
+    <input type="hidden" name="avatar_accessory" id="avatarAcc" value="" />
+
+    <button class="btn primary full big" type="submit">Entrer 🚪</button>
+    <button type="button" id="randomBtn" class="btn full">🎲 Aleatoire</button>
+  </form>
+</div>
+
+<script>
+  const charGrid  = document.getElementById('charGrid');
+  const colorRow  = document.getElementById('colorRow');
+  const accGrid   = document.getElementById('accGrid');
+  const preview   = document.getElementById('preview');
+  const pChar     = document.getElementById('previewChar');
+  const pAcc      = document.getElementById('previewAcc');
+  const inpChar   = document.getElementById('avatarChar');
+  const inpColor  = document.getElementById('avatarColor');
+  const inpAcc    = document.getElementById('avatarAcc');
+
+  function pick(parent, cls, value, target) {
+    parent.querySelectorAll('.selected').forEach(b => b.classList.remove('selected'));
+    cls.classList.add('selected');
+    target.value = value;
+    updatePreview();
+  }
+  function updatePreview() {
+    preview.style.setProperty('--preview-color', inpColor.value);
+    preview.style.background = inpColor.value;
+    pChar.textContent = inpChar.value;
+    pAcc.textContent  = inpAcc.value;
+  }
+
+  charGrid.addEventListener('click', e => {
+    const b = e.target.closest('.char-cell'); if (!b) return;
+    pick(charGrid, b, b.dataset.char, inpChar);
+  });
+  colorRow.addEventListener('click', e => {
+    const b = e.target.closest('.color-dot'); if (!b) return;
+    pick(colorRow, b, b.dataset.color, inpColor);
+  });
+  accGrid.addEventListener('click', e => {
+    const b = e.target.closest('.acc-cell'); if (!b) return;
+    pick(accGrid, b, b.dataset.acc, inpAcc);
+  });
+
+  function randomize() {
+    const r = (arr) => arr[Math.floor(Math.random()*arr.length)];
+    const chars  = Array.from(charGrid.querySelectorAll('.char-cell'));
+    const colors = Array.from(colorRow.querySelectorAll('.color-dot'));
+    const accs   = Array.from(accGrid.querySelectorAll('.acc-cell'));
+    pick(charGrid, r(chars), r(chars).dataset.char, inpChar);
+    pick(colorRow, r(colors), r(colors).dataset.color, inpColor);
+    pick(accGrid,  r(accs),   r(accs).dataset.acc,    inpAcc);
+  }
+
+  document.getElementById('randomBtn').onclick = randomize;
+
+  // Auto-randomize on load
+  randomize();
+</script>
+{% endblock %}

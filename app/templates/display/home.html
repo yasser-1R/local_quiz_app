@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block body_class %}bg-gradient center{% endblock %}
+{% block content %}
+<div class="card narrow">
+  <h1>📺 Vue projecteur</h1>
+  <p>Entrez le code de session pour projeter:</p>
+  <form method="get" onsubmit="event.preventDefault(); window.location='/display/' + this.code.value.toUpperCase();">
+    <input name="code" required style="text-transform:uppercase;" />
+    <button class="btn primary full">Ouvrir</button>
+  </form>
+</div>
+{% endblock %}

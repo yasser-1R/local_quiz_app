@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block body_class %}bg-gradient{% endblock %}
+{% block content %}
+<header class="topbar light">
+  <h1>🎓 Salle d'attente {% if quiz %}— {{ quiz.title }}{% endif %}</h1>
+  <div>
+    <a class="btn" href="/display" target="_blank">Projecteur</a>
+    <a class="btn" href="/teacher">← Tableau de bord</a>
+  </div>
+</header>
+
+<main class="container two-col">
+  <div class="card">
+    <h2>Rejoindre le quiz</h2>
+    <p class="muted">Ouvrez cette URL sur votre appareil — pas de code requis.</p>
+    <code class="join-url">{{ join_url }}</code>
+    <div class="qr"><img src="data:image/png;base64,{{ qr_b64 }}" alt="QR code"/></div>
+    <p class="muted small">Ou tapez: <b>{{ local_ip }}:{{ port }}</b></p>
+
+    {% if session.state == 'WAITING' %}
+      <p class="muted">Choisissez un quiz depuis le <a href="/teacher">tableau de bord</a>.</p>
+    {% elif session.state == 'LOBBY' %}
+      <button id="startBtn" class="btn primary big" onclick="startQuiz()">Demarrer le quiz ▶</button>
+    {% else %}
+      <p class="muted">Quiz en cours — allez au <a href="/teacher/control">controle</a>.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Joueurs <span id="count" class="badge">{{ players|length }}</span></h2>
+    <ul id="players" class="player-list">
+      {% for p in players %}
+        <li>
+          <span class="avatar-pill" style="background: {{ p.avatar_color or '#6366f1' }};">
+            <span class="avatar-char">{{ p.avatar_character or '🦊' }}</span>
+            {% if p.avatar_accessory %}
+              <span class="avatar-acc">{{ p.avatar_accessory }}</span>
+            {% endif %}
+          </span>
+          {{ p.nickname }}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</main>
+
+<script>
+const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
+const ws = new WebSocket(`${wsProto}://${location.host}/ws/teacher`);
+const list = document.getElementById('players');
+const count = document.getElementById('count');
+
+ws.onmessage = (ev) => {
+  const msg = JSON.parse(ev.data);
+  if (msg.type === 'player_joined') {
+    list.innerHTML = msg.players.map(renderPlayer).join('');
+    count.textContent = msg.total;
+  }
+};
+
+function renderPlayer(p) {
+  const acc = p.avatar_accessory
+    ? `<span class="avatar-acc">${p.avatar_accessory}</span>` : '';
+  return `<li>
+    <span class="avatar-pill" style="background: ${p.avatar_color || '#6366f1'};">
+      <span class="avatar-char">${p.avatar_character || '🦊'}</span>${acc}
+    </span>
+    ${escapeHtml(p.nickname)}
+  </li>`;
+}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+async function startQuiz() {
+  console.log('Starting quiz...');
+  const res = await fetch(`/api/session/start`, {method: 'POST'});
+  if (res.ok) {
+    console.log('Quiz started, redirecting to control...');
+    window.location.href = `/teacher/control`;
+  } else {
+    console.error('Failed to start quiz');
+    alert('Impossible de demarrer');
+  }
+}
+</script>
+{% endblock %}

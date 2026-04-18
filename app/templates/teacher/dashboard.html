@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block body_class %}bg-light{% endblock %}
+{% block content %}
+<header class="topbar">
+  <h1>🎓 {{ app_title }}</h1>
+  <div>
+    <a class="btn" href="/teacher/lobby">Salle d'attente</a>
+    <a class="btn" href="/display" target="_blank">Projecteur</a>
+    <a class="btn" href="/teacher/logout">Deconnexion</a>
+  </div>
+</header>
+
+<main class="container">
+  {% if current %}
+    <div class="card room-banner">
+      <div>
+        <h3 style="margin:0;">Session active</h3>
+        <p class="muted" style="margin:4px 0 0;">
+          {% if current.state == 'WAITING' %}
+            En attente du lancement du quiz.
+          {% elif current.state == 'LOBBY' %}
+            Quiz charge — salle d'attente ouverte.
+          {% elif current.state in ('QUESTION_ACTIVE', 'QUESTION_CLOSED', 'LEADERBOARD') %}
+            Un quiz est en cours.
+          {% endif %}
+        </p>
+      </div>
+      <div class="row gap">
+        <span class="badge big">👥 {{ waiting_count }}</span>
+        {% if current.state in ('QUESTION_ACTIVE', 'QUESTION_CLOSED', 'LEADERBOARD') %}
+          <a class="btn primary" href="/teacher/control">Retour au controle</a>
+        {% elif current.state == 'LOBBY' %}
+          <a class="btn primary" href="/teacher/lobby">Retour a la salle</a>
+        {% else %}
+          <a class="btn" href="/teacher/lobby">Salle d'attente</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="row space-between">
+    <h2>Mes quizzes</h2>
+    <a class="btn primary" href="/teacher/quiz/new">+ Nouveau quiz</a>
+  </div>
+
+  {% if not quizzes %}
+    <p class="muted">Aucun quiz. Creez-en un pour commencer.</p>
+  {% endif %}
+
+  <div class="grid">
+    {% for q in quizzes %}
+    <div class="card">
+      <h3>{{ q.title }}</h3>
+      <p class="muted">{{ q.description or "" }}</p>
+      <p class="small">{{ q.category or "—" }} • {{ q.question_count }} question(s)</p>
+      <div class="row gap">
+        <button class="btn primary" onclick="launchQuiz({{ q.id }})">▶ Lancer</button>
+        <a class="btn" href="/teacher/quiz/{{ q.id }}/edit">Modifier</a>
+        <button class="btn" onclick="duplicateQuiz({{ q.id }})">Dupliquer</button>
+        <button class="btn danger" onclick="deleteQuiz({{ q.id }})">Supprimer</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</main>
+
+<script>
+async function launchQuiz(quizId) {
+  const res = await fetch('/api/session/launch', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({quiz_id: quizId}),
+  });
+  if (!res.ok) { alert('Impossible de lancer le quiz'); return; }
+  window.location.href = '/teacher/lobby';
+}
+async function duplicateQuiz(id) {
+  await fetch(`/api/quizzes/${id}/duplicate`, {method: 'POST'});
+  window.location.reload();
+}
+async function deleteQuiz(id) {
+  if (!confirm('Supprimer ce quiz definitivement?')) return;
+  await fetch(`/api/quizzes/${id}`, {method: 'DELETE'});
+  window.location.reload();
+}
+</script>
+{% endblock %}
