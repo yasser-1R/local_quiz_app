@@ -1,9 +1,10 @@
 {% extends "base.html" %}
-{% block body_class %}bg-light{% endblock %}
+{% block body_class %}bg-dashboard{% endblock %}
 {% block content %}
 <header class="topbar">
   <h1>🎓 {{ app_title }}</h1>
-  <div>
+  <div class="row gap">
+    <a class="btn active" href="/teacher/dashboard">Mes quizzes</a>
     <a class="btn" href="/teacher/lobby">Salle d'attente</a>
     <a class="btn" href="/display" target="_blank">Projecteur</a>
     <a class="btn" href="/teacher/logout">Deconnexion</a>
@@ -21,16 +22,16 @@
           {% elif current.state == 'LOBBY' %}
             Quiz charge — salle d'attente ouverte.
           {% elif current.state in ('QUESTION_ACTIVE', 'QUESTION_CLOSED', 'LEADERBOARD') %}
-            Un quiz est en cours.
+            Quiz en cours
           {% endif %}
         </p>
       </div>
       <div class="row gap">
-        <span class="badge big">👥 {{ waiting_count }}</span>
+        <span class="badge big">{{ waiting_count }} joueurs</span>
         {% if current.state in ('QUESTION_ACTIVE', 'QUESTION_CLOSED', 'LEADERBOARD') %}
-          <a class="btn primary" href="/teacher/control">Retour au controle</a>
+          <a class="btn primary" href="/teacher/control">Controle</a>
         {% elif current.state == 'LOBBY' %}
-          <a class="btn primary" href="/teacher/lobby">Retour a la salle</a>
+          <a class="btn primary" href="/teacher/lobby">Salle</a>
         {% else %}
           <a class="btn" href="/teacher/lobby">Salle d'attente</a>
         {% endif %}
@@ -47,13 +48,15 @@
     <p class="muted">Aucun quiz. Creez-en un pour commencer.</p>
   {% endif %}
 
-  <div class="grid">
+  <div class="quiz-stack">
     {% for q in quizzes %}
-    <div class="card">
-      <h3>{{ q.title }}</h3>
-      <p class="muted">{{ q.description or "" }}</p>
-      <p class="small">{{ q.category or "—" }} • {{ q.question_count }} question(s)</p>
-      <div class="row gap">
+    <div class="card quiz-item">
+      <div class="quiz-item-info">
+        <h3>{{ q.title }}</h3>
+        <p class="muted">{{ q.description or "Aucune description" }}</p>
+        <p class="small">{{ q.category or "—" }} • {{ q.question_count }} question(s)</p>
+      </div>
+      <div class="quiz-item-actions">
         <button class="btn primary" onclick="launchQuiz({{ q.id }})">▶ Lancer</button>
         <a class="btn" href="/teacher/quiz/{{ q.id }}/edit">Modifier</a>
         <button class="btn" onclick="duplicateQuiz({{ q.id }})">Dupliquer</button>
