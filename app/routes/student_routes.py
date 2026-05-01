@@ -139,4 +139,5 @@ def _public_player(p: dict) -> dict:
         "avatar_character": p.get("avatar_character") or "🦊",
         "avatar_color": p.get("avatar_color") or "#6366f1",
         "avatar_accessory": p.get("avatar_accessory") or "",
+        "is_connected": bool(p.get("is_connected", True)),
     }

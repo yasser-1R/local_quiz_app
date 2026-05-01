@@ -1,0 +1,38 @@
+{
+  "title": "Thème 3 : Programmation",
+  "questions": [
+    {
+      "question_text": "Un programme est :",
+      "choices": [
+        "Un matériel",
+        "Un ensemble d'instructions",
+        "Un réseau",
+        "Une donnée"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 10
+    },
+    {
+      "question_text": "Un langage de programmation sert à :",
+      "choices": [
+        "Créer du matériel",
+        "Écrire des programmes",
+        "Connecter réseau",
+        "Stocker données"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 10
+    },
+    {
+      "question_text": "Python est :",
+      "choices": [
+        "Un matériel",
+        "Un langage",
+        "Un réseau",
+        "Un type"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 10
+    }
+  ]
+}

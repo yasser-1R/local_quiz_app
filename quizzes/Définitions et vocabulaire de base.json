@@ -1,0 +1,49 @@
+{
+  "title": "Thème 1 : Définitions et vocabulaire de base",
+  "questions": [
+    {
+      "question_text": "Qu'est-ce que l'information ?",
+      "choices": [
+        "Une donnée brute",
+        "Une donnée traitée",
+        "Un programme",
+        "Un matériel"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 10
+    },
+    {
+      "question_text": "Le traitement consiste à :",
+      "choices": [
+        "Stocker les données",
+        "Transformer les données",
+        "Supprimer les données",
+        "Afficher les données"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 10
+    },
+    {
+      "question_text": "L'informatique est :",
+      "choices": [
+        "La science des nombres",
+        "La science du traitement automatique de l'information",
+        "Un logiciel",
+        "Un réseau"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 10
+    },
+    {
+      "question_text": "Un système informatique est composé de :",
+      "choices": [
+        "Matériel seulement",
+        "Logiciel seulement",
+        "Matériel et logiciel",
+        "Internet seulement"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 10
+    }
+  ]
+}

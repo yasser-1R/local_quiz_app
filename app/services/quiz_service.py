@@ -62,6 +62,30 @@ def update_quiz(quiz_id: int, title: str, description: str, category: str) -> No
 
 def delete_quiz(quiz_id: int) -> None:
     with db_cursor() as cur:
+        # Find sessions linked to this quiz
+        session_rows = cur.execute(
+            "SELECT id FROM sessions WHERE quiz_id=?", (quiz_id,)
+        ).fetchall()
+        session_ids = [r["id"] for r in session_rows]
+
+        if session_ids:
+            placeholders = ",".join("?" * len(session_ids))
+            # answers and final_scores lack ON DELETE CASCADE, remove them first
+            cur.execute(
+                f"DELETE FROM final_scores WHERE session_id IN ({placeholders})",
+                session_ids,
+            )
+            cur.execute(
+                f"DELETE FROM answers WHERE session_id IN ({placeholders})",
+                session_ids,
+            )
+            # players has ON DELETE CASCADE toward sessions, but we delete sessions next
+            cur.execute(
+                f"DELETE FROM sessions WHERE id IN ({placeholders})",
+                session_ids,
+            )
+
+        # questions/choices have ON DELETE CASCADE, so deleting quiz is enough
         cur.execute("DELETE FROM quizzes WHERE id=?", (quiz_id,))
 
 

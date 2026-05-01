@@ -11,25 +11,10 @@
 
 <main class="container two-col">
   <div class="card">
-    <h2>Rejoindre le quiz</h2>
-    <p class="muted">Ouvrez cette URL sur votre appareil — pas de code requis.</p>
-    <code class="join-url">{{ join_url }}</code>
-    <div class="qr"><img src="data:image/png;base64,{{ qr_b64 }}" alt="QR code"/></div>
-    <p class="muted small">Ou tapez: <b>{{ local_ip }}:{{ port }}</b></p>
-
-    {% if session.state == 'WAITING' %}
-      <p class="muted">Choisissez un quiz depuis le <a href="/teacher">tableau de bord</a>.</p>
-    {% elif session.state == 'LOBBY' %}
-      <button id="startBtn" class="btn primary big" onclick="startQuiz()">Demarrer le quiz ▶</button>
-    {% else %}
-      <p class="muted">Quiz en cours — allez au <a href="/teacher/control">controle</a>.</p>
-    {% endif %}
-  </div>
-
-  <div class="card">
     <h2>Joueurs <span id="count" class="badge">{{ players|length }}</span></h2>
     <ul id="players" class="player-list">
       {% for p in players %}
+        {% if p.is_connected %}
         <li>
           <span class="avatar-pill" style="background: {{ p.avatar_color or '#6366f1' }};">
             <span class="avatar-char">{{ p.avatar_character or '🦊' }}</span>
@@ -39,8 +24,17 @@
           </span>
           {{ p.nickname }}
         </li>
+        {% endif %}
       {% endfor %}
     </ul>
+
+    {% if session.state == 'WAITING' %}
+      <p class="muted">Choisissez un quiz depuis le <a href="/teacher">tableau de bord</a>.</p>
+    {% elif session.state == 'LOBBY' %}
+      <button id="startBtn" class="btn primary big" onclick="startQuiz()">Demarrer le quiz ▶</button>
+    {% else %}
+      <p class="muted">Quiz en cours — allez au <a href="/teacher/control">controle</a>.</p>
+    {% endif %}
   </div>
 </main>
 
@@ -50,13 +44,14 @@ const ws = new WebSocket(`${wsProto}://${location.host}/ws/teacher`);
 const list = document.getElementById('players');
 const count = document.getElementById('count');
 
-ws.onmessage = (ev) => {
-  const msg = JSON.parse(ev.data);
-  if (msg.type === 'player_joined') {
-    list.innerHTML = msg.players.map(renderPlayer).join('');
-    count.textContent = msg.total;
-  }
-};
+  ws.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === 'player_joined') {
+      const connected = msg.players.filter(p => p.is_connected !== false);
+      list.innerHTML = connected.map(renderPlayer).join('');
+      count.textContent = connected.length;
+    }
+  };
 
 function renderPlayer(p) {
   const acc = p.avatar_accessory

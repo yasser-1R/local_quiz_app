@@ -3,16 +3,13 @@ Teacher pages + teacher session-control API.
 URLs are now codeless — the current session is resolved on the server.
 """
 import io
-import base64
 import csv
 import re
-
-import qrcode
 from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 
-from ..config import TEACHER_PASSWORD, TEMPLATES_DIR, APP_TITLE, PORT
+from ..config import TEACHER_PASSWORD, TEMPLATES_DIR, APP_TITLE
 from ..services import (
     analytics_service,
     quiz_service,
@@ -20,7 +17,6 @@ from ..services import (
     player_service,
     scoring_service,
 )
-from ..utils.network_utils import get_local_ip
 
 
 router = APIRouter(prefix="/teacher", tags=["teacher"])
@@ -239,13 +235,6 @@ async def edit_quiz_page(request: Request, quiz_id: int):
 
 
 # ---------- single-room session pages ----------
-def _qr_for(url: str) -> str:
-    img = qrcode.make(url)
-    buf = io.BytesIO()
-    img.save(buf, format="PNG")
-    return base64.b64encode(buf.getvalue()).decode()
-
-
 @router.get("/lobby", response_class=HTMLResponse, dependencies=[Depends(require_teacher)])
 async def lobby(request: Request):
     session = session_service.ensure_current_session()
@@ -256,10 +245,6 @@ async def lobby(request: Request):
     )
     players = player_service.list_players(session["id"])
 
-    ip = get_local_ip()
-    join_url = f"http://{ip}:{PORT}/"
-    qr_b64 = _qr_for(join_url)
-
     return templates.TemplateResponse(
         request,
         "teacher/lobby.html",
@@ -268,10 +253,6 @@ async def lobby(request: Request):
             "session": session,
             "quiz": quiz,
             "players": players,
-            "join_url": join_url,
-            "qr_b64": qr_b64,
-            "local_ip": ip,
-            "port": PORT,
         },
     )
 
