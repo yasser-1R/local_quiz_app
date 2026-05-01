@@ -871,3 +871,116 @@ input:focus, textarea:focus { outline: 2px solid #6366f1; border-color: #6366f1;
   margin-bottom: 20px;
 }
 .student-rank-display .rank-medal { font-size: 80px; }
+
+/* ========== TEACHER REPORTS ========== */
+.report-page .card { box-shadow: 0 2px 12px rgba(15, 23, 42, .06); }
+.report-hero {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-left: 6px solid #14b8a6;
+  border-radius: 12px;
+  padding: 22px 24px;
+  margin-bottom: 18px;
+}
+.report-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.kpi-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 18px;
+}
+.kpi-card span {
+  display: block;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.kpi-card strong {
+  display: block;
+  margin-top: 8px;
+  color: #0f172a;
+  font-size: 32px;
+  line-height: 1;
+}
+.report-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 22px;
+}
+.question-report {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 14px;
+  background: #fbfdff;
+}
+.report-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+.report-bar-row,
+.mini-bar-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.2fr) 2fr minmax(86px, auto);
+  gap: 12px;
+  align-items: center;
+}
+.report-bar-row.correct .bar-choice {
+  color: #15803d;
+  font-weight: 800;
+}
+.report-bar-track,
+.mini-bar-track {
+  height: 28px;
+  background: #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.report-bar-fill {
+  min-width: 3px;
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 8px;
+}
+.report-bar-row.correct .report-bar-fill { background: #22c55e; }
+.mini-bar-row {
+  grid-template-columns: 78px 1fr 36px;
+  margin-bottom: 10px;
+}
+.mini-bar-fill {
+  min-width: 3px;
+  height: 100%;
+  background: #14b8a6;
+  border-radius: 8px;
+}
+.student-details summary {
+  cursor: pointer;
+  color: #4f46e5;
+  font-weight: 700;
+}
+.results.compact {
+  margin-top: 10px;
+  font-size: 14px;
+}
+.results.compact th,
+.results.compact td {
+  padding: 7px 8px;
+}
+@media (max-width: 850px) {
+  .report-kpis,
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+  .report-bar-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}

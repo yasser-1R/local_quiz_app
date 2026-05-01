@@ -16,6 +16,14 @@ body.bg-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
     <div id="choices" class="q-choices"></div>
   </div>
 
+  <div id="correct-view" class="teacher-view" style="display:none;">
+    <h2 class="section-title">Bonne reponse</h2>
+    <div class="correct-reveal-card">
+      <div id="correct-choice-text" class="correct-choice-text">---</div>
+      <p id="correct-explanation" class="correct-explanation"></p>
+    </div>
+  </div>
+
   <div id="chart-view" class="teacher-view" style="display:none;">
     <h2 class="section-title">📊 Reponses des joueurs</h2>
     <div class="chart-container">
@@ -100,6 +108,38 @@ body.bg-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
 .chart-bar .bar-count { width: 80px; font-size: 24px; font-weight: 700; color: #fff; text-align: right; }
 .correct-answer { text-align: center; font-size: 28px; color: #22c55e; font-weight: 700; margin-top: 30px; }
 
+/* Correct Answer Reveal */
+#correct-view { width: 100%; max-width: 1000px; text-align: center; }
+.correct-reveal-card {
+  background: rgba(255,255,255,0.18);
+  border: 2px solid rgba(255,255,255,0.28);
+  border-radius: 28px;
+  padding: 56px;
+  backdrop-filter: blur(12px);
+  animation: revealPop .7s cubic-bezier(.2,1.35,.45,1) both;
+}
+.correct-choice-text {
+  display: inline-block;
+  background: #22c55e;
+  color: #fff;
+  font-size: 48px;
+  font-weight: 900;
+  line-height: 1.15;
+  padding: 28px 36px;
+  border-radius: 22px;
+  box-shadow: 0 18px 50px rgba(34,197,94,.35);
+}
+.correct-explanation {
+  color: rgba(255,255,255,.9);
+  font-size: 26px;
+  margin: 28px 0 0;
+}
+@keyframes revealPop {
+  0% { opacity: 0; transform: translateY(50px) scale(.85); }
+  70% { opacity: 1; transform: translateY(-8px) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 /* Scores View */
 #scores-view { width: 100%; max-width: 900px; }
 .scores-container { display: flex; justify-content: center; }
@@ -128,11 +168,18 @@ body.bg-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
 .anim-row.moved-up { background: rgba(34,197,94,0.4) !important; }
 .anim-row.moved-down { background: rgba(239,68,68,0.4) !important; }
 .anim-rank { width: 50px; font-size: 24px; font-weight: 800; }
+.anim-avatar { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 25px; box-shadow: 0 5px 16px rgba(0,0,0,0.25); }
 .anim-name { flex: 1; font-size: 22px; }
 .anim-pts { font-size: 24px; font-weight: 800; color: #fbbf24; min-width: 80px; text-align: right; }
 .anim-change { font-size: 24px; font-weight: 800; min-width: 80px; text-align: left; }
 .moved-up .anim-change { color: #22c55e; }
 .moved-down .anim-change { color: #ef4444; }
+.anim-row.spotlight { animation: rankSpotlight 0.9s ease-out; }
+@keyframes rankSpotlight {
+  0% { filter: brightness(1); transform: translateY(0) scale(1); }
+  45% { filter: brightness(1.45); transform: translateY(-6px) scale(1.035); }
+  100% { filter: brightness(1); transform: translateY(0) scale(1); }
+}
 
 /* Waiting View */
 #waiting-view { text-align: center; }
@@ -143,9 +190,23 @@ body.bg-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
 #podium-view { text-align: center; width: 100%; }
 .podium-title { font-size: 64px; color: #fff; margin-bottom: 50px; }
 .teacher-podium { display: flex; justify-content: center; align-items: flex-end; gap: 30px; }
-.teacher-podium .podium-item { text-align: center; padding: 30px 40px; border-radius: 20px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); min-width: 180px; }
+.teacher-podium .podium-item { text-align: center; padding: 30px 40px; border-radius: 20px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); min-width: 180px; animation: podiumRise 0.75s cubic-bezier(.2,1.35,.45,1) both; }
 .teacher-podium .podium-item.big { background: linear-gradient(135deg, rgba(254,243,199,0.95), rgba(253,230,138,0.95)); padding: 50px 70px; transform: scale(1.15); box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
 .teacher-podium .podium-item.small { padding: 25px 35px; }
+.teacher-podium .podium-item:nth-child(1) { animation-delay: .22s; }
+.teacher-podium .podium-item:nth-child(2) { animation-delay: .02s; }
+.teacher-podium .podium-item:nth-child(3) { animation-delay: .38s; }
+@keyframes podiumRise {
+  0% { opacity: 0; transform: translateY(80px) scale(.72); }
+  70% { opacity: 1; transform: translateY(-10px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.teacher-podium .podium-item.big { animation-name: podiumRiseBig; }
+@keyframes podiumRiseBig {
+  0% { opacity: 0; transform: translateY(80px) scale(.82); }
+  70% { opacity: 1; transform: translateY(-12px) scale(1.22); }
+  100% { opacity: 1; transform: translateY(0) scale(1.15); }
+}
 .teacher-podium .podium-avatar { width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 15px; font-size: 60px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
 .teacher-podium .podium-item.big .podium-avatar { width: 140px; height: 140px; font-size: 80px; }
 .teacher-podium .podium-item.small .podium-avatar { width: 80px; height: 80px; font-size: 48px; }
@@ -197,18 +258,21 @@ body.bg-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
 const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
 const ws = new WebSocket(`${wsProto}://${location.host}/ws/teacher`);
 
-// Phase: 'waiting' | 'question' | 'chart' | 'scores' | 'finished'
+// Phase: 'waiting' | 'question' | 'answer' | 'chart' | 'scores' | 'finished'
 let phase = 'waiting';
 let currentQuestion = null;
+let currentClosedQuestion = null;
 let currentBoardBefore = [];
 let totalQuestions = 0;
 let currentQuestionIndex = 0;
 let tickInterval = null;
 let finalBoard = [];
+let questionCloseRequested = false;
 
 const $status = document.getElementById('status');
 const $mainBtn = document.getElementById('main-btn');
 const $questionView = document.getElementById('question-view');
+const $correctView = document.getElementById('correct-view');
 const $chartView = document.getElementById('chart-view');
 const $scoresView = document.getElementById('scores-view');
 const $waitingView = document.getElementById('waiting-view');
@@ -220,6 +284,8 @@ const $bar = document.getElementById('bar');
 const $choices = document.getElementById('choices');
 const $chartBars = document.getElementById('chart-bars');
 const $correctTxt = document.getElementById('correct-txt');
+const $correctChoiceText = document.getElementById('correct-choice-text');
+const $correctExplanation = document.getElementById('correct-explanation');
 const $scoresBefore = document.getElementById('scores-before');
 const $scoresAfter = document.getElementById('scores-after');
 const $qtext = document.getElementById('qtext');
@@ -248,12 +314,19 @@ ws.onmessage = ev => {
     totalQuestions = m.total;
     currentQuestionIndex = m.index;
     currentQuestion = m.question;
+    currentClosedQuestion = null;
+    questionCloseRequested = false;
     phase = 'question';
     showQuestionPhase(m);
   } else if (m.type === 'answer_received') {
     $status.textContent = `${m.count} / ${m.total_players} ont repondu`;
   } else if (m.type === 'question_ended') {
     currentBoardBefore = m.board_before || [];
+    currentClosedQuestion = m;
+    phase = 'answer';
+    showCorrectPhase(m);
+  } else if (m.type === 'distribution_shown') {
+    currentClosedQuestion = m;
     phase = 'chart';
     showChartPhase(m);
   } else if (m.type === 'scores_shown') {
@@ -270,6 +343,7 @@ ws.onmessage = ev => {
 
 function showQuestionPhase(m) {
   $waitingView.style.display = 'none';
+  $correctView.style.display = 'none';
   $chartView.style.display = 'none';
   $scoresView.style.display = 'none';
   $questionView.style.display = 'block';
@@ -284,10 +358,27 @@ function showQuestionPhase(m) {
   updateButton();
 }
 
+function showCorrectPhase(m) {
+  stopTimer();
+  phase = 'answer';
+  $questionView.style.display = 'none';
+  $chartView.style.display = 'none';
+  $scoresView.style.display = 'none';
+  $correctView.style.display = 'block';
+
+  const q = currentQuestion || m.question;
+  const correctChoice = q.choices[m.correct_choice_index];
+  $correctChoiceText.textContent = correctChoice ? correctChoice.text : '';
+  $correctExplanation.textContent = m.explanation || '';
+
+  updateButton();
+}
+
 function showChartPhase(m) {
   stopTimer();
   phase = 'chart';
   $questionView.style.display = 'none';
+  $correctView.style.display = 'none';
   $scoresView.style.display = 'none';
   $chartView.style.display = 'block';
 
@@ -315,20 +406,31 @@ function showChartPhase(m) {
 function showScoresPhase(m) {
   phase = 'scores';
   $questionView.style.display = 'none';
+  $correctView.style.display = 'none';
   $chartView.style.display = 'none';
   $scoresView.style.display = 'block';
 
   const top10 = m.board.slice(0, 10);
+  const previousRanks = {};
+  (m.board_before || currentBoardBefore || []).forEach(p => {
+    previousRanks[p.id] = p.rank;
+  });
 
   // Single column - Kahoot-style animation
   $scoresAfter.innerHTML = '';
 
   const rowsHtml = top10.map((p, i) => {
     const medal = p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : '';
-    return `<div class="anim-row rank-${p.rank}" style="top:${i * 70}px;">
+    const previous = previousRanks[p.id];
+    const movement = previous ? previous - p.rank : 0;
+    const movementClass = movement > 0 ? 'moved-up' : movement < 0 ? 'moved-down' : '';
+    const movementText = movement > 0 ? `+${movement}` : movement < 0 ? `${movement}` : '-';
+    return `<div class="anim-row rank-${p.rank} ${movementClass}" style="top:${i * 70}px;">
       <span class="anim-rank">${medal || '#'+p.rank}</span>
+      <span class="anim-avatar" style="background:${p.avatar_color || '#6366f1'};">${p.avatar_character || '?'}</span>
       <span class="anim-name">${escapeHtml(p.nickname)}</span>
       <span class="anim-pts" id="pts-${i}">${p.total_score}</span>
+      <span class="anim-change">${movementText}</span>
     </div>`;
   }).join('');
 
@@ -353,6 +455,10 @@ function showScoresPhase(m) {
       // Add pop flash effect
       row.classList.add('pop-flash');
       setTimeout(() => row.classList.remove('pop-flash'), 300);
+      if (i < 3) {
+        setTimeout(() => row.classList.add('spotlight'), 150);
+        setTimeout(() => row.classList.remove('spotlight'), 1100);
+      }
       
       // Add a little bounce back
       setTimeout(() => {
@@ -394,6 +500,7 @@ function animateScoreCount(el, from, to, duration, delay = 0) {
 function showPodium(board) {
   const top5 = board.slice(0, 5);
   $questionView.style.display = 'none';
+  $correctView.style.display = 'none';
   $chartView.style.display = 'none';
   $scoresView.style.display = 'none';
   $waitingView.style.display = 'none';
@@ -477,6 +584,10 @@ function startTimer(limit, startedAt) {
     if (left <= 0) {
       stopTimer();
       $timer.textContent = '0s';
+      if (!questionCloseRequested && phase === 'question') {
+        questionCloseRequested = true;
+        fetch('/api/session/end-question', {method: 'POST'});
+      }
     }
   }, 100);
 }
@@ -495,6 +606,9 @@ function updateButton() {
   if (phase === 'question') {
     $mainBtn.textContent = 'Terminer la question';
     $mainBtn.className = 'teacher-btn danger';
+  } else if (phase === 'answer') {
+    $mainBtn.textContent = 'Voir la repartition';
+    $mainBtn.className = 'teacher-btn primary';
   } else if (phase === 'chart') {
     $mainBtn.textContent = 'Voir les scores';
     $mainBtn.className = 'teacher-btn primary';
@@ -508,7 +622,10 @@ function updateButton() {
 
 async function doAction() {
   if (phase === 'question') {
+    questionCloseRequested = true;
     await fetch('/api/session/end-question', {method: 'POST'});
+  } else if (phase === 'answer') {
+    await fetch('/api/session/show-distribution', {method: 'POST'});
   } else if (phase === 'chart') {
     await fetch('/api/session/show-scores', {method: 'POST'});
   } else if (phase === 'scores') {

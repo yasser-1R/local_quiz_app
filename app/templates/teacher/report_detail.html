@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block body_class %}bg-dashboard{% endblock %}
+{% block content %}
+<header class="topbar">
+  <h1>Rapport - {{ report.quiz.title }}</h1>
+  <div class="row gap">
+    <a class="btn" href="/teacher/reports">Archives</a>
+    <a class="btn" href="/teacher/reports/{{ report.session.id }}/export.csv">Exporter CSV</a>
+    <a class="btn primary" href="/teacher">Tableau de bord</a>
+  </div>
+</header>
+
+<main class="container report-page">
+  <section class="report-hero">
+    <div>
+      <h2>{{ report.quiz.title }}</h2>
+      <p class="muted">
+        Session {{ report.session.session_code }} -
+        {{ report.session.started_at or "debut non renseigne" }} -
+        {{ report.session.ended_at or "fin non renseignee" }}
+      </p>
+    </div>
+  </section>
+
+  <section class="report-kpis">
+    <div class="kpi-card">
+      <span>Taux moyen</span>
+      <strong>{{ report.overview.average_success_rate }}%</strong>
+    </div>
+    <div class="kpi-card">
+      <span>Eleves</span>
+      <strong>{{ report.overview.player_count }}</strong>
+    </div>
+    <div class="kpi-card">
+      <span>Questions</span>
+      <strong>{{ report.overview.question_count }}</strong>
+    </div>
+    <div class="kpi-card">
+      <span>Score moyen</span>
+      <strong>{{ report.overview.average_score }}</strong>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Vue d'ensemble de la classe</h2>
+    <div class="report-grid">
+      <div>
+        <h3>Questions les plus problematiques</h3>
+        {% if not report.overview.problematic_questions %}
+          <p class="muted">Aucune question.</p>
+        {% else %}
+          <table class="results">
+            <thead>
+              <tr><th>Question</th><th>Taux de reussite</th></tr>
+            </thead>
+            <tbody>
+              {% for q in report.overview.problematic_questions %}
+                <tr>
+                  <td>Q{{ q.number }} - {{ q.text }}</td>
+                  <td>{{ q.success_rate }}%</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+      </div>
+      <div>
+        <h3>Distribution des scores</h3>
+        {% for bucket in report.overview.score_distribution %}
+          <div class="mini-bar-row">
+            <span>{{ bucket.label }}</span>
+            <div class="mini-bar-track">
+              <div class="mini-bar-fill" style="width: {{ bucket.percent }}%;"></div>
+            </div>
+            <b>{{ bucket.count }}</b>
+          </div>
+        {% else %}
+          <p class="muted">Aucun score.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Vue par question</h2>
+    {% for q in report.questions %}
+      <article class="question-report">
+        <div class="row space-between wrap">
+          <div>
+            <h3>Q{{ q.number }} - {{ q.text }}</h3>
+            <p class="muted">
+              {{ q.success_rate }}% de reussite -
+              {{ q.correct_count }} bonne(s) reponse(s) -
+              temps moyen:
+              {% if q.avg_response_seconds is not none %}
+                {{ q.avg_response_seconds }}s
+              {% else %}
+                n/a
+              {% endif %}
+            </p>
+          </div>
+          <span class="badge big">{{ q.unanswered_count }} sans reponse</span>
+        </div>
+
+        <div class="report-bars">
+          {% for choice in q.distribution %}
+            <div class="report-bar-row{% if choice.is_correct %} correct{% endif %}">
+              <span class="bar-choice">{{ choice.choice_text }}</span>
+              <div class="report-bar-track">
+                <div class="report-bar-fill" style="width: {{ choice.percent }}%;"></div>
+              </div>
+              <b>{{ choice.count }} ({{ choice.percent }}%)</b>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+    {% else %}
+      <p class="muted">Aucune question dans ce rapport.</p>
+    {% endfor %}
+  </section>
+
+  <section class="card">
+    <h2>Vue par eleve</h2>
+    {% if not report.students %}
+      <p class="muted">Aucun eleve dans cette session.</p>
+    {% else %}
+      <table class="results">
+        <thead>
+          <tr>
+            <th>Eleve</th>
+            <th>Score</th>
+            <th>Reussite</th>
+            <th>Bonnes reponses</th>
+            <th>Temps moyen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in report.students %}
+            <tr>
+              <td>
+                <span class="avatar-pill" style="background: {{ student.avatar_color or '#6366f1' }};">
+                  <span class="avatar-char">{{ student.avatar_character or '?' }}</span>
+                  {% if student.avatar_accessory %}
+                    <span class="avatar-acc">{{ student.avatar_accessory }}</span>
+                  {% endif %}
+                </span>
+                {{ student.nickname }}
+              </td>
+              <td>{{ student.total_score }}</td>
+              <td>{{ student.success_rate }}%</td>
+              <td>{{ student.correct_answers }}/{{ report.overview.question_count }}</td>
+              <td>
+                {% if student.avg_response_seconds is not none %}
+                  {{ student.avg_response_seconds }}s
+                {% else %}
+                  n/a
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td colspan="5">
+                <details class="student-details">
+                  <summary>Details des questions</summary>
+                  <table class="results compact">
+                    <thead>
+                      <tr><th>Question</th><th>Resultat</th><th>Reponse</th><th>Temps</th><th>Points</th></tr>
+                    </thead>
+                    <tbody>
+                      {% for row in student.questions %}
+                        <tr>
+                          <td>Q{{ row.number }}</td>
+                          <td>
+                            {% if row.is_correct %}
+                              <span class="good">Reussie</span>
+                            {% else %}
+                              <span class="bad">Ratee</span>
+                            {% endif %}
+                          </td>
+                          <td>{{ row.selected_choice }}</td>
+                          <td>
+                            {% if row.response_seconds is not none %}
+                              {{ row.response_seconds }}s
+                            {% else %}
+                              n/a
+                            {% endif %}
+                          </td>
+                          <td>{{ row.points }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </details>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+
+</main>
+{% endblock %}

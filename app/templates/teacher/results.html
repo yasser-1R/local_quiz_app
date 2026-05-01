@@ -4,6 +4,9 @@
 <header class="topbar">
   <h1>🏆 Resultats finals{% if quiz %} — {{ quiz.title }}{% endif %}</h1>
   <div class="row gap">
+    {% if session %}
+      <a class="btn" href="/teacher/reports/{{ session.id }}">Rapport enseignant</a>
+    {% endif %}
     <a class="btn" href="/teacher/lobby">Retour a la salle d'attente</a>
     <a class="btn primary" href="/teacher">← Tableau de bord</a>
   </div>

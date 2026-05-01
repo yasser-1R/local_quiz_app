@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block body_class %}bg-dashboard{% endblock %}
+{% block content %}
+<header class="topbar">
+  <h1>{{ app_title }} - Rapports</h1>
+  <div class="row gap">
+    <a class="btn" href="/teacher">Mes quizzes</a>
+    <a class="btn" href="/teacher/lobby">Salle d'attente</a>
+    <a class="btn" href="/display" target="_blank">Projecteur</a>
+    <a class="btn" href="/teacher/logout">Deconnexion</a>
+  </div>
+</header>
+
+<main class="container">
+  <div class="row space-between">
+    <div>
+      <h2>Sessions archivees</h2>
+      <p class="muted">Rapports generes a partir des quiz termines.</p>
+    </div>
+    <a class="btn primary" href="/teacher">Retour au tableau de bord</a>
+  </div>
+
+  {% if not sessions %}
+    <div class="card">
+      <p class="muted">Aucun rapport disponible. Terminez un quiz pour creer une archive.</p>
+    </div>
+  {% else %}
+    <div class="quiz-stack">
+      {% for session in sessions %}
+        <div class="card quiz-item">
+          <div class="quiz-item-info">
+            <h3>{{ session.quiz_title or "Quiz supprime" }}</h3>
+            <p class="muted">
+              Session {{ session.session_code }} -
+              {{ session.player_count }} eleve(s) -
+              {{ session.question_count }} question(s)
+            </p>
+            <p class="small">Fin: {{ session.ended_at or "Non renseignee" }}</p>
+          </div>
+          <div class="quiz-item-actions">
+            <a class="btn primary" href="/teacher/reports/{{ session.id }}">Voir le rapport</a>
+            <a class="btn" href="/teacher/reports/{{ session.id }}/export.csv">Exporter CSV</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</main>
+{% endblock %}

@@ -137,6 +137,21 @@ async def show_scores(teacher_auth: Optional[str] = Cookie(default=None)):
     return {"ok": True}
 
 
+@router.post("/show-distribution")
+async def show_distribution(teacher_auth: Optional[str] = Cookie(default=None)):
+    _require_teacher(teacher_auth)
+    session = session_service.get_current_session()
+    if session is None:
+        raise HTTPException(404)
+    if session["state"] != "QUESTION_CLOSED":
+        return {"ok": True, "note": "question not closed"}
+    payload = _question_distribution_payload(session)
+    if payload is None:
+        return {"ok": True, "note": "no current question"}
+    await manager.broadcast(session["session_code"], payload)
+    return {"ok": True}
+
+
 @router.post("/show-leaderboard")
 async def show_leaderboard(teacher_auth: Optional[str] = Cookie(default=None)):
     _require_teacher(teacher_auth)
@@ -178,16 +193,9 @@ async def reset_session(teacher_auth: Optional[str] = Cookie(default=None)):
     # Mark old session as finished
     session_service.mark_ended(old_session_id)
     
-    # Get all players from old session
-    players = player_service.list_players(old_session_id)
-    
-    # Create new waiting session
-    new_session = session_service.ensure_current_session()
-    new_session_id = new_session["id"]
-    
-    # Move all players to new session and reset their connection status
-    for player in players:
-        player_service.move_player_to_session(player["id"], new_session_id)
+    # Create a new empty waiting session. Keep the old players attached to the
+    # finished session so teacher reports remain historically accurate.
+    session_service.ensure_current_session()
     
     # Close all student WebSocket connections for old session
     await manager.close_students(old_code)
@@ -228,30 +236,38 @@ async def _go_to_question(code: str, index: int) -> None:
 
 
 async def _close_current_question(session: dict) -> None:
+    session_service.update_state(session["id"], "QUESTION_CLOSED")
+    session = session_service.get_session(session["id"])
+    payload = _question_distribution_payload(session)
+    if payload is None:
+        return
+
+    payload["type"] = "question_ended"
+    payload["board_before"] = []
+
+    await manager.broadcast(session["session_code"], payload)
+
+
+def _question_distribution_payload(session: dict) -> Optional[dict]:
     q = session_service.current_question(session)
     if q is None:
-        return
-    session_service.update_state(session["id"], "QUESTION_CLOSED")
-
+        return None
     public_q = session_service.question_public(q)
     correct_choice = q["choices"][q["correct_choice_index"]]
     dist = answer_service.choice_distribution(session["id"], q["id"])
     board = scoring_service.leaderboard(session["id"])
-
-    await manager.broadcast(
-        session["session_code"],
-        {
-            "type": "question_ended",
-            "question_id": q["id"],
-            "question": public_q,
-            "correct_choice_id": correct_choice["id"],
-            "correct_choice_index": q["correct_choice_index"],
-            "explanation": q.get("explanation") or "",
-            "distribution": dist,
-            "board": board,
-            "board_before": [],
-        },
-    )
+    total_players = len(player_service.list_players(session["id"]))
+    return {
+        "type": "distribution_shown",
+        "question_id": q["id"],
+        "question": public_q,
+        "correct_choice_id": correct_choice["id"],
+        "correct_choice_index": q["correct_choice_index"],
+        "explanation": q.get("explanation") or "",
+        "distribution": dist,
+        "total_players": total_players,
+        "board": board,
+    }
 
 
 # Called from the student WebSocket when an answer comes in.
