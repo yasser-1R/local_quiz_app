@@ -28,6 +28,52 @@ def get_profile_by_nickname(nickname: str) -> Optional[dict]:
         conn.close()
 
 
+def get_profile_progress_data(profile_id: int) -> dict:
+    """Get progress data for a student profile (for chart display)."""
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            """
+            SELECT s.id AS session_id, s.session_code, s.started_at, s.ended_at,
+                   q.title AS quiz_title,
+                   COUNT(DISTINCT a.id) AS answered,
+                   SUM(a.is_correct) AS correct,
+                   SUM(a.points_awarded) AS total_points
+            FROM players p
+            JOIN sessions s ON s.id = p.session_id
+            LEFT JOIN quizzes q ON q.id = s.quiz_id
+            LEFT JOIN answers a ON a.player_id = p.id AND a.session_id = s.id
+            WHERE p.profile_id = ? AND s.state = 'FINISHED'
+            GROUP BY s.id
+            ORDER BY s.started_at
+            """,
+            (profile_id,),
+        ).fetchall()
+
+        sessions = []
+        for r in rows:
+            d = dict(r)
+            session_row = conn.execute("SELECT quiz_id FROM sessions WHERE id=?", (d["session_id"],)).fetchone()
+            total_q = 0
+            if session_row and session_row["quiz_id"]:
+                total_q = conn.execute(
+                    "SELECT COUNT(*) AS c FROM questions WHERE quiz_id=?",
+                    (session_row["quiz_id"],)
+                ).fetchone()["c"]
+            d["total_questions"] = total_q
+            d["success_rate"] = round((d["correct"] / d["answered"] * 100), 1) if d["answered"] else 0
+            d["answered"] = d["answered"] or 0
+            d["correct"] = d["correct"] or 0
+            d["total_points"] = d["total_points"] or 0
+            sessions.append(d)
+
+        return {
+            "sessions": sessions,
+        }
+    finally:
+        conn.close()
+
+
 def create_or_update_profile(
     nickname: str,
     character: str,

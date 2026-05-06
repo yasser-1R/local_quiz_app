@@ -60,7 +60,120 @@
   <a href="/" class="btn full" style="margin-top: 12px;">← Retour</a>
 </div>
 
+<!-- Progress Chart Section -->
+<div class="card" style="margin-top: 20px;">
+  <h2>📈 Mon Evolution</h2>
+  <p class="muted">Voici l'evolution de ton niveau au fil des quiz</p>
+  <div class="chart-container">
+    <canvas id="progressChart"></canvas>
+  </div>
+  <p id="noDataMsg" class="muted" style="text-align: center; margin-top: 20px; display: none;">
+    Tu n'as pas encore de donnees de progress. Complete des quiz pour voir ton evolution!
+  </p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+  const PROGRESS_COOKIE = "student_profile_token";
+  
+  // Load progress data
+  async function loadProgress() {
+    try {
+      const res = await fetch('/api/profile/progress');
+      if (!res.ok) return;
+      const data = await res.json();
+      renderChart(data.progress.sessions);
+    } catch(e) {
+      console.error('Failed to load progress:', e);
+    }
+  }
+  
+  function renderChart(sessions) {
+    const noDataMsg = document.getElementById('noDataMsg');
+    const chartContainer = document.querySelector('.chart-container');
+    
+    if (!sessions || sessions.length === 0) {
+      noDataMsg.style.display = 'block';
+      chartContainer.style.display = 'none';
+      return;
+    }
+    
+    noDataMsg.style.display = 'none';
+    chartContainer.style.display = 'block';
+    
+    const labels = sessions.map((s, i) => `Quiz ${i + 1}`);
+    const scores = sessions.map(s => s.success_rate || 0);
+    const points = sessions.map(s => s.total_points || 0);
+    
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Taux de reussite (%)',
+            data: scores,
+            borderColor: '#22c55e',
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            fill: true,
+            tension: 0.4,
+            yAxisID: 'y',
+          },
+          {
+            label: 'Points',
+            data: points,
+            borderColor: '#fbbf24',
+            backgroundColor: 'rgba(251, 191, 36, 0.1)',
+            fill: true,
+            tension: 0.4,
+            yAxisID: 'y1',
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: {
+          mode: 'index',
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            labels: { color: '#fff' }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { color: 'rgba(255,255,255,0.7)' },
+            grid: { color: 'rgba(255,255,255,0.1)' }
+          },
+          y: {
+            type: 'linear',
+            display: true,
+            position: 'left',
+            ticks: { color: '#22c55e' },
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            min: 0,
+            max: 100,
+            title: { display: true, text: 'Taux (%)', color: '#22c55e' }
+          },
+          y1: {
+            type: 'linear',
+            display: true,
+            position: 'right',
+            ticks: { color: '#fbbf24' },
+            grid: { display: false },
+            min: 0,
+            title: { display: true, text: 'Points', color: '#fbbf24' }
+          }
+        }
+      }
+    });
+  }
+  
+  // Load progress on page load
+  loadProgress();
+</script>
   const charGrid  = document.getElementById('charGrid');
   const colorRow  = document.getElementById('colorRow');
   const accGrid   = document.getElementById('accGrid');

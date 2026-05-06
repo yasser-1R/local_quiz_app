@@ -145,6 +145,38 @@ function submitAnswer(choiceId, choiceIdx){
 
 function showSubmitted(m){
   if (!m.ok) return;
+  
+  // Immediate remediation: show result immediately after answering
+  // The teacher may not have shown the result yet, but we show the correct answer
+  showImmediateResult(m);
+}
+
+function showImmediateResult(m) {
+  clearInterval(tick);
+  const wasCorrect = m.is_correct === true;
+  const correctText = m.correct_text || '';
+  lastPoints = m.points || 0;
+  streak = wasCorrect ? streak + 1 : 0;
+  triggerBurst(wasCorrect ? 'good' : 'bad');
+
+  $screen.innerHTML = `
+    <div class="student-result-view">
+      <h1 class="${wasCorrect ? 'result-good' : 'result-bad'}">
+        ${wasCorrect ? '✅ Correct!' : '❌ Faux'}
+      </h1>
+      <div class="result-motivation ${wasCorrect ? 'good-panel' : 'bad-panel'}">
+        <strong>${wasCorrect ? `+${lastPoints} pts` : 'Garde le rythme'}</strong>
+        <span>${streak > 1 ? `Serie de ${streak} bonnes reponses` : (wasCorrect ? 'Excellent depart' : 'La prochaine peut tout changer')}</span>
+      </div>
+      <div class="correct-choice-card">
+        <span>Bonne reponse</span>
+        <strong>${escapeHtml(correctText)}</strong>
+      </div>
+      <p class="result-waiting">En attente de la correction collective par le professeur...</p>
+    </div>`;
+  
+  // Update score display
+  $score.textContent = `${m.total_score || 0} pts`;
 }
 
 function showResult(m){

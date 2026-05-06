@@ -255,6 +255,48 @@ async def bulk_correct(teacher_auth: Optional[str] = Cookie(default=None)):
     return {"ok": True, "board": board}
 
 
+@router.post("/bulk-correct-unified")
+async def bulk_correct_unified(teacher_auth: Optional[str] = Cookie(default=None)):
+    """
+    Batch correction for UNIFIED mode: show results to all students at once.
+    This is triggered when teacher ends the quiz or shows final results.
+    """
+    _require_teacher(teacher_auth)
+    session = session_service.get_current_session()
+    if session is None:
+        raise HTTPException(404, "No active session")
+
+    # Get current question and broadcast its results to all
+    if session.get("quiz_id"):
+        q = session_service.current_question(session)
+        if q is not None:
+            public_q = session_service.question_public(q)
+            correct_choice = q["choices"][q["correct_choice_index"]]
+            dist = answer_service.choice_distribution(session["id"], q["id"])
+            total_players = len(player_service.list_players(session["id"]))
+            await manager.broadcast(
+                session["session_code"],
+                {
+                    "type": "distribution_shown",
+                    "question_id": q["id"],
+                    "question": public_q,
+                    "correct_choice_id": correct_choice["id"],
+                    "correct_choice_index": q["correct_choice_index"],
+                    "explanation": q.get("explanation") or "",
+                    "distribution": dist,
+                    "total_players": total_players,
+                },
+            )
+    
+    # Show leaderboard state
+    session_service.update_state(session["id"], "LEADERBOARD")
+    board = scoring_service.leaderboard(session["id"])
+    await manager.broadcast(
+        session["session_code"], {"type": "bulk_correction", "board": board}
+    )
+    return {"ok": True, "board": board}
+
+
 # ---------- helpers ----------
 async def _go_to_question(code: str, index: int) -> None:
     session = session_service.get_session_by_code(code)

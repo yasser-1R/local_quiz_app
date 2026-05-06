@@ -18,6 +18,7 @@ from .routes import (
     session_routes,
     student_routes,
     teacher_routes,
+    profile_routes,
 )
 from .services import player_service, session_service, quiz_service, random_assignment_service, scoring_service, answer_service
 from .websocket_manager import manager
@@ -36,6 +37,7 @@ def create_app() -> FastAPI:
     app.include_router(display_routes.router)
     app.include_router(quiz_routes.router)
     app.include_router(session_routes.router)
+    app.include_router(profile_routes.router)
 
     @app.websocket("/ws/teacher")
     async def ws_teacher(websocket: WebSocket):

@@ -637,7 +637,8 @@ function updateButton() {
     $mainBtn.textContent = 'Voir la repartition';
     $mainBtn.className = 'teacher-btn primary';
   } else if (phase === 'chart') {
-    $mainBtn.textContent = 'Voir les scores';
+    // After showing distribution, go to next question (no scoring between questions)
+    $mainBtn.textContent = 'Question suivante ▶';
     $mainBtn.className = 'teacher-btn primary';
   } else if (phase === 'scores') {
     $mainBtn.textContent = 'Question suivante ▶';
@@ -654,7 +655,8 @@ async function doAction() {
   } else if (phase === 'answer') {
     await fetch('/api/session/show-distribution', {method: 'POST'});
   } else if (phase === 'chart') {
-    await fetch('/api/session/show-scores', {method: 'POST'});
+    // Go to next question (skip showing scores between questions)
+    await fetch('/api/session/next', {method: 'POST'});
   } else if (phase === 'scores') {
     await fetch('/api/session/next', {method: 'POST'});
   } else if (phase === 'finished') {
