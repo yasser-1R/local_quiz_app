@@ -82,6 +82,20 @@
   </section>
 
   <section class="card">
+    <h2>📊 Graphique des taux de reussite par question</h2>
+    <div class="chart-wrapper">
+      <canvas id="questionSuccessChart" height="280"></canvas>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>📊 Distribution des reponses par question</h2>
+    <div class="chart-wrapper">
+      <canvas id="distributionChart" height="300"></canvas>
+    </div>
+  </section>
+
+  <section class="card">
     <h2>Vue par question</h2>
     {% for q in report.questions %}
       <article class="question-report">
@@ -199,4 +213,91 @@
   </section>
 
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const questions = {{ report.questions | tojson }};
+
+if (questions.length > 0) {
+  new Chart(document.getElementById('questionSuccessChart'), {
+    type: 'line',
+    data: {
+      labels: questions.map(q => `Q${q.number}`),
+      datasets: [{
+        label: 'Taux de reussite (%)',
+        data: questions.map(q => q.success_rate),
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99,102,241,0.1)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 6,
+        pointBackgroundColor: questions.map(q =>
+          q.success_rate >= 75 ? '#22c55e' : q.success_rate >= 50 ? '#eab308' : '#ef4444'
+        ),
+        borderWidth: 3,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => {
+              const q = questions[items[0].dataIndex];
+              return `Q${q.number}: ${q.text.slice(0, 60)}...`;
+            },
+            label: (item) => `Reussite: ${item.raw}%`,
+          }
+        }
+      },
+      scales: {
+        y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('distributionChart'), {
+    type: 'bar',
+    data: {
+      labels: questions.map(q => `Q${q.number}`),
+      datasets: [
+        {
+          label: 'Bonnes reponses',
+          data: questions.map(q => q.correct_count),
+          backgroundColor: '#22c55e',
+          borderRadius: 4,
+        },
+        {
+          label: 'Reponses incorrectes',
+          data: questions.map(q => q.answer_count - q.correct_count),
+          backgroundColor: '#ef4444',
+          borderRadius: 4,
+        },
+        {
+          label: 'Sans reponse',
+          data: questions.map(q => q.unanswered_count),
+          backgroundColor: '#94a3b8',
+          borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' },
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, beginAtZero: true }
+      }
+    }
+  });
+}
+</script>
+
+<style>
+.chart-wrapper { max-height: 400px; margin-bottom: 20px; }
+</style>
 {% endblock %}

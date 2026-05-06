@@ -81,6 +81,28 @@ CREATE TABLE IF NOT EXISTS final_scores (
     average_response_time  INTEGER,
     final_rank             INTEGER
 );
+
+CREATE TABLE IF NOT EXISTS student_profiles (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    profile_token     TEXT UNIQUE NOT NULL,
+    nickname          TEXT NOT NULL,
+    avatar_character  TEXT,
+    avatar_color      TEXT,
+    avatar_accessory  TEXT,
+    created_at        TEXT DEFAULT CURRENT_TIMESTAMP,
+    last_seen         TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS session_player_questions (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id    INTEGER NOT NULL,
+    player_id     INTEGER NOT NULL,
+    question_id   INTEGER NOT NULL,
+    question_order INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+    FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+);
 """
 
 
@@ -171,6 +193,21 @@ def _migrate(conn) -> None:
         sql = _table_sql(conn, "sessions")
         if "quiz_id                  INTEGER NOT NULL" in sql:
             _rebuild_table(conn, "sessions")
+
+        # ---- step 4: add quiz_mode to sessions
+        cols = _column_names(conn, "sessions")
+        if "quiz_mode" not in cols:
+            conn.execute("ALTER TABLE sessions ADD COLUMN quiz_mode TEXT DEFAULT 'UNIFIED'")
+
+        # ---- step 5: add difficulty to questions
+        cols = _column_names(conn, "questions")
+        if "difficulty" not in cols:
+            conn.execute("ALTER TABLE questions ADD COLUMN difficulty TEXT DEFAULT 'medium'")
+
+        # ---- step 6: add profile_id to players
+        cols = _column_names(conn, "players")
+        if "profile_id" not in cols:
+            conn.execute("ALTER TABLE players ADD COLUMN profile_id INTEGER")
     finally:
         conn.execute("PRAGMA legacy_alter_table = OFF")
         conn.execute("PRAGMA foreign_keys = ON")

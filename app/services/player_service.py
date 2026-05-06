@@ -52,15 +52,15 @@ def _valid(character: str, color: str, accessory: str):
     return character, color, accessory
 
 
-def add_player(session_id: int, nickname: str, character: str, color: str, accessory: str) -> dict:
+def add_player(session_id: int, nickname: str, character: str, color: str, accessory: str, profile_id: int = None) -> dict:
     character, color, accessory = _valid(character, color, accessory)
     token = generate_player_token()
     with db_cursor() as cur:
         cur.execute(
             "INSERT INTO players "
-            "(session_id, token, nickname, avatar_character, avatar_color, avatar_accessory) "
-            "VALUES (?,?,?,?,?,?)",
-            (session_id, token, nickname, character, color, accessory),
+            "(session_id, token, nickname, avatar_character, avatar_color, avatar_accessory, profile_id) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (session_id, token, nickname, character, color, accessory, profile_id),
         )
         pid = cur.lastrowid
     return {
@@ -71,6 +71,7 @@ def add_player(session_id: int, nickname: str, character: str, color: str, acces
         "avatar_character": character,
         "avatar_color": color,
         "avatar_accessory": accessory,
+        "profile_id": profile_id,
     }
 
 

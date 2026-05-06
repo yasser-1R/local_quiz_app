@@ -6,7 +6,6 @@ from . import quiz_service, scoring_service
 
 
 def list_finished_sessions() -> list[dict]:
-    """Return archived quiz sessions newest first."""
     conn = get_connection()
     try:
         rows = conn.execute(
@@ -25,6 +24,89 @@ def list_finished_sessions() -> list[dict]:
             """
         ).fetchall()
         return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_student_progress(profile_id: int) -> dict | None:
+    """Get a student's progress across all sessions."""
+    conn = get_connection()
+    try:
+        profile = conn.execute(
+            "SELECT * FROM student_profiles WHERE id=?", (profile_id,)
+        ).fetchone()
+        if profile is None:
+            return None
+        profile = dict(profile)
+
+        rows = conn.execute(
+            """
+            SELECT s.id AS session_id, s.session_code, s.started_at, s.ended_at,
+                   q.title AS quiz_title,
+                   COUNT(DISTINCT a.id) AS answered,
+                   SUM(a.is_correct) AS correct,
+                   SUM(a.points_awarded) AS total_points
+            FROM players p
+            JOIN sessions s ON s.id = p.session_id
+            LEFT JOIN quizzes q ON q.id = s.quiz_id
+            LEFT JOIN answers a ON a.player_id = p.id AND a.session_id = s.id
+            WHERE p.profile_id = ? AND s.state = 'FINISHED'
+            GROUP BY s.id
+            ORDER BY s.started_at
+            """,
+            (profile_id,),
+        ).fetchall()
+
+        sessions = []
+        for r in rows:
+            d = dict(r)
+            total_q = conn.execute(
+                "SELECT COUNT(*) AS c FROM questions WHERE quiz_id=?",
+                (conn.execute("SELECT quiz_id FROM sessions WHERE id=?", (d["session_id"],)).fetchone()["quiz_id"],)
+            ).fetchone()["c"]
+            d["total_questions"] = total_q
+            d["success_rate"] = round((d["correct"] / d["answered"] * 100), 1) if d["answered"] else 0
+            d["answered"] = d["answered"] or 0
+            d["correct"] = d["correct"] or 0
+            d["total_points"] = d["total_points"] or 0
+            sessions.append(d)
+
+        return {
+            "profile": profile,
+            "sessions": sessions,
+        }
+    finally:
+        conn.close()
+
+
+def list_all_students() -> list[dict]:
+    """List all student profiles with their total stats."""
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            """
+            SELECT sp.id, sp.profile_token, sp.nickname,
+                   sp.avatar_character, sp.avatar_color, sp.avatar_accessory,
+                   sp.created_at, sp.last_seen,
+                   COUNT(DISTINCT s.id) AS session_count,
+                   SUM(a.is_correct) AS total_correct,
+                   COUNT(a.id) AS total_answered
+            FROM student_profiles sp
+            LEFT JOIN players p ON p.profile_id = sp.id
+            LEFT JOIN sessions s ON s.id = p.session_id AND s.state = 'FINISHED'
+            LEFT JOIN answers a ON a.player_id = p.id
+            GROUP BY sp.id
+            ORDER BY sp.nickname
+            """
+        ).fetchall()
+        result = []
+        for r in rows:
+            d = dict(r)
+            d["total_correct"] = d["total_correct"] or 0
+            d["total_answered"] = d["total_answered"] or 0
+            d["overall_rate"] = round((d["total_correct"] / d["total_answered"] * 100), 1) if d["total_answered"] else 0
+            result.append(d)
+        return result
     finally:
         conn.close()
 

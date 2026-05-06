@@ -16,10 +16,18 @@
 
 <main class="teacher-screen">
   <div id="screen">
+    {% if quiz_mode == 'RANDOM' %}
+    <div class="waiting-center">
+      <h1>En attente du professeur...</h1>
+      <p class="muted">Le quiz va commencer en mode questions aleatoires 🎲</p>
+      <p class="muted">Tu auras {{ player_questions|length }} questions differentes des autres eleves</p>
+    </div>
+    {% else %}
     <div class="waiting-center">
       <h1>En attente du professeur...</h1>
       <p class="muted">Patientez, le quiz va commencer! 🎉</p>
     </div>
+    {% endif %}
   </div>
 </main>
 
@@ -27,6 +35,7 @@
 const token = "{{ player.token }}";
 const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
 const myNickname = "{{ player.nickname }}";
+const quizMode = "{{ quiz_mode }}";
 
 let ws;
 function connect() {
@@ -43,24 +52,37 @@ let startedAt = 0;
 let answered = false;
 let timeLimit = 0;
 let tick = null;
-let myLastAnswer = null;
 let currentScore = 0;
 let streak = 0;
 let lastPoints = 0;
-let lastAcceptedCorrect = null;
-let pendingAnswerResult = null;
+let totalQuestions = 0;
+let answeredCount = 0;
+let studentFinished = false;
 
 function onMessage(ev) {
   const m = JSON.parse(ev.data);
-  if (m.type === 'question_started') showQuestion(m.question, m.started_at);
-  else if (m.type === 'question_ended') showResult(m);
-  else if (m.type === 'scores_shown') showMyRank(m.board);
-  else if (m.type === 'session_finished') showFinal(m.board);
-  else if (m.type === 'answer_result') showSubmitted(m);
-  else if (m.type === 'quiz_attached') showQuizStarting();
-  else if (m.type === 'quiz_reset') {
-    alert('Le quiz est termine. Retour a la page de connexion.');
-    window.location.href = '/';
+  if (quizMode === 'RANDOM') {
+    if (m.type === 'quiz_started_random') showRandomQuestion(m.question || null);
+    else if (m.type === 'random_question_started') showRandomQuestion(m.question);
+    else if (m.type === 'answer_result') showRandomAnswerResult(m);
+    else if (m.type === 'student_finished') showRandomFinished();
+    else if (m.type === 'bulk_correction') showFinal(m.board);
+    else if (m.type === 'session_finished') showFinal(m.board);
+    else if (m.type === 'quiz_reset') {
+      alert('Le quiz est termine. Retour a la page de connexion.');
+      window.location.href = '/';
+    }
+  } else {
+    if (m.type === 'question_started') showQuestion(m.question, m.started_at);
+    else if (m.type === 'question_ended') showResult(m);
+    else if (m.type === 'scores_shown') showMyRank(m.board);
+    else if (m.type === 'session_finished') showFinal(m.board);
+    else if (m.type === 'answer_result') showSubmitted(m);
+    else if (m.type === 'quiz_attached') showQuizStarting();
+    else if (m.type === 'quiz_reset') {
+      alert('Le quiz est termine. Retour a la page de connexion.');
+      window.location.href = '/';
+    }
   }
 }
 
@@ -70,14 +92,13 @@ function showQuizStarting() {
     <p class="muted">Preparez-vous...</p>`;
 }
 
+/* ==================== UNIFIED MODE (same as before but no ranking) ==================== */
+
 function showQuestion(q, started) {
   timeLimit = q.time_limit;
   startedAt = started * 1000;
   answered = false;
-  myLastAnswer = null;
   lastPoints = 0;
-  lastAcceptedCorrect = null;
-  pendingAnswerResult = null;
   $screen.innerHTML = `
     <div class="student-question-view">
       <div class="q-progress"><div id="bar" class="q-bar"></div></div>
@@ -111,7 +132,6 @@ function runTimer(){
 function submitAnswer(choiceId, choiceIdx){
   if (answered) return;
   answered = true;
-  myLastAnswer = choiceIdx;
   document.querySelectorAll('.answer-btn').forEach(b => {
     if (parseInt(b.dataset.idx) === choiceIdx) {
       b.classList.add('selected');
@@ -125,27 +145,22 @@ function submitAnswer(choiceId, choiceIdx){
 
 function showSubmitted(m){
   if (!m.ok) return;
-  pendingAnswerResult = m;
-  const info = document.createElement('div');
-  info.className = 'toast answer-toast waiting-toast';
-  info.innerHTML = '<strong>Reponse envoyee</strong><span>Resultat a la fin du temps</span>';
-  $screen.appendChild(info);
 }
 
 function showResult(m){
   clearInterval(tick);
-  if (pendingAnswerResult) {
-    lastPoints = pendingAnswerResult.points || 0;
-    lastAcceptedCorrect = !!pendingAnswerResult.is_correct;
-    animateHeaderScore(currentScore, pendingAnswerResult.total_score || currentScore);
-    currentScore = pendingAnswerResult.total_score || currentScore;
+  let wasCorrect = false;
+  if (m.is_correct !== undefined) {
+    wasCorrect = m.is_correct;
+  } else if (myLastAnswer !== null && m.correct_choice_index !== undefined) {
+    wasCorrect = (myLastAnswer === m.correct_choice_index);
   }
-  const wasCorrect = lastAcceptedCorrect !== null
-    ? lastAcceptedCorrect
-    : myLastAnswer !== null && myLastAnswer === m.correct_choice_index;
+  lastPoints = m.points || 0;
   streak = wasCorrect ? streak + 1 : 0;
   triggerBurst(wasCorrect ? 'good' : 'bad');
-  
+
+  const correctText = m.question.choices[m.correct_choice_index].text;
+
   $screen.innerHTML = `
     <div class="student-result-view">
       <h1 class="${wasCorrect ? 'result-good' : 'result-bad'}">
@@ -157,52 +172,144 @@ function showResult(m){
       </div>
       <div class="correct-choice-card">
         <span>Bonne reponse</span>
-        <strong>${escapeHtml(m.question.choices[m.correct_choice_index].text)}</strong>
+        <strong>${escapeHtml(correctText)}</strong>
       </div>
       ${m.explanation ? `<p class="result-explanation">${escapeHtml(m.explanation)}</p>` : ''}
-      <div class="result-chart" style="display:none;">
-        ${m.question.choices.map((c, i) => {
-          const count = m.distribution[c.id] || 0;
-          const pct = Math.round((count / (m.total_players || 1)) * 100);
-          const isCorrect = i === m.correct_choice_index;
-          return `<div class="result-bar">
-            <div class="result-bar-label ${isCorrect ? 'correct' : ''}">${isCorrect ? '✓ ' : ''}${escapeHtml(c.text)}</div>
-            <div class="result-bar-track">
-              <div class="result-bar-fill c${i}" style="width:${pct}%">${count}</div>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-      <p class="result-waiting">En attente du classement...</p>
+      <p class="result-waiting">En attente du professeur...</p>
     </div>`;
 }
 
 function showMyRank(board){
   const me = board.find(p => p.nickname === myNickname);
-  const rank = me ? me.rank : '-';
   const score = me ? me.total_score : 0;
-  const avatarColor = me ? me.avatar_color : '#6366f1';
-  const avatarChar = me ? me.avatar_character : '🦊';
   $score.textContent = `${score} pts`;
   currentScore = score;
 
-  let medal = '';
-  if(rank === 1) medal = '🥇';
-  else if(rank === 2) medal = '🥈';
-  else if(rank === 3) medal = '🥉';
-
   $screen.innerHTML = `
     <div class="student-rank-view">
-      <h2 class="rank-label">Votre classement</h2>
-      <div class="rank-row rank-${rank} rank-enter">
-        <span class="rank-avatar" style="background:${avatarColor};">${avatarChar}</span>
+      <h2 class="rank-label">En attente de la prochaine question...</h2>
+      <div class="rank-row">
+        <span class="rank-avatar" style="background:${me ? me.avatar_color : '#6366f1'};">${me ? me.avatar_character : '🦊'}</span>
         <span class="rank-name">${escapeHtml(myNickname)}</span>
-        <span class="rank-medal">${medal || '#'+rank}</span>
         <span class="rank-score">${score} pts</span>
       </div>
-      <p class="rank-hint">${rank <= 3 ? 'Tu es dans le podium!' : 'Continue, le podium est jouable.'}</p>
     </div>`;
 }
+
+/* ==================== RANDOM MODE (self-paced) ==================== */
+
+let randomAnswered = false;
+let randomStartedAt = 0;
+let randomTick = null;
+
+function showRandomQuestion(q) {
+  if (!q) return;
+  timeLimit = q.time_limit || 30;
+  randomStartedAt = Date.now();
+  randomAnswered = false;
+  lastPoints = 0;
+
+  $screen.innerHTML = `
+    <div class="student-question-view">
+      <div class="q-progress"><div id="bar" class="q-bar"></div></div>
+      <div class="q-counter">Question ${answeredCount + 1} / ${totalQuestions || '?'}</div>
+      <h1 class="q-timer" id="timer">${timeLimit}s</h1>
+      <h2 class="q-text">${escapeHtml(q.text)}</h2>
+      <div class="q-choices">
+        ${q.choices.map((c,i)=>`
+          <button class="choice c${i} answer-btn" data-id="${c.id}" data-idx="${i}">${escapeHtml(c.text)}</button>
+        `).join('')}
+      </div>
+    </div>`;
+  document.querySelectorAll('.answer-btn').forEach(btn => {
+    btn.onclick = () => submitRandomAnswer(parseInt(btn.dataset.id, 10), parseInt(btn.dataset.idx, 10));
+  });
+  runRandomTimer();
+}
+
+function runRandomTimer(){
+  clearInterval(randomTick);
+  const ends = randomStartedAt + timeLimit * 1000;
+  randomTick = setInterval(() => {
+    const left = Math.max(0, (ends - Date.now()) / 1000);
+    const t = document.getElementById('timer');
+    const b = document.getElementById('bar');
+    if (t) t.textContent = left.toFixed(1) + 's';
+    if (b) b.style.width = `${(left / timeLimit) * 100}%`;
+    if (left <= 0) { clearInterval(randomTick); if(t) t.textContent = '0s'; }
+  }, 100);
+}
+
+function submitRandomAnswer(choiceId, choiceIdx){
+  if (randomAnswered) return;
+  randomAnswered = true;
+  document.querySelectorAll('.answer-btn').forEach(b => {
+    if (parseInt(b.dataset.idx) === choiceIdx) {
+      b.classList.add('selected');
+    } else {
+      b.classList.add('faded');
+    }
+  });
+  const elapsed = Date.now() - randomStartedAt;
+  ws.send(JSON.stringify({type: 'submit_answer', choice_id: choiceId, elapsed_ms: elapsed}));
+}
+
+function showRandomAnswerResult(m) {
+  clearInterval(randomTick);
+  if (!m.ok || !m.accepted) return;
+
+  answeredCount++;
+  const wasCorrect = m.is_correct;
+  lastPoints = m.points || 0;
+  currentScore = m.total_score || 0;
+  $score.textContent = `${currentScore} pts`;
+
+  streak = wasCorrect ? streak + 1 : 0;
+  triggerBurst(wasCorrect ? 'good' : 'bad');
+
+  $screen.innerHTML = `
+    <div class="student-result-view">
+      <h1 class="${wasCorrect ? 'result-good' : 'result-bad'}">
+        ${wasCorrect ? '✅ Correct!' : '❌ Faux'}
+      </h1>
+      <div class="result-motivation ${wasCorrect ? 'good-panel' : 'bad-panel'}">
+        <strong>${wasCorrect ? `+${lastPoints} pts` : 'Garde le rythme'}</strong>
+        <span>${streak > 1 ? `Serie de ${streak} bonnes reponses` : 'Continue!'}</span>
+      </div>
+      <div class="correct-choice-card">
+        <span>Bonne reponse</span>
+        <strong>${escapeHtml(m.correct_text || '...')}</strong>
+      </div>
+      <div class="result-progress">
+        <span>Progression: ${answeredCount} / ${totalQuestions || '?'}</span>
+        <div class="progress-track">
+          <div class="progress-fill" style="width: ${(answeredCount / (totalQuestions || 1)) * 100}%"></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function showRandomFinished() {
+  studentFinished = true;
+  $screen.innerHTML = `
+    <div class="student-finished-view">
+      <h1>🎉 Tu as termine toutes tes questions!</h1>
+      <div class="finished-score">${currentScore} points</div>
+      <p class="muted">En attente de la correction generale par le professeur...</p>
+      <div class="finished-stats">
+        <div class="stat-card">
+          <span>Questions</span>
+          <strong>${answeredCount}</strong>
+        </div>
+        <div class="stat-card">
+          <span>Score</span>
+          <strong>${currentScore} pts</strong>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ==================== FINAL (both modes) ==================== */
 
 function showFinal(board){
   const me = board.find(p => p.nickname === myNickname);
@@ -230,6 +337,8 @@ function showFinal(board){
     </div>`;
 }
 
+/* ==================== UTILS ==================== */
+
 function animateHeaderScore(from, to) {
   const start = performance.now();
   const duration = 650;
@@ -254,7 +363,6 @@ function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&
 </script>
 
 <style>
-/* teacher-screen container - centered, full height */
 .teacher-screen {
   min-height: 100vh;
   padding: 20px;
@@ -264,12 +372,10 @@ function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&
   justify-content: center;
 }
 
-/* Waiting view */
 .waiting-center { text-align:center; }
 .waiting-center h1 { font-size: 56px; color: #fff; margin-bottom: 20px; }
 .waiting-center .muted { font-size: 24px; color: rgba(255,255,255,0.8); }
 
-/* Question view - big like teacher */
 .student-question-view { width: 100%; max-width: 1200px; text-align: center; }
 .student-question-view .q-progress { width: 100%; height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; margin-bottom: 30px; }
 .student-question-view .q-bar { height: 100%; background: #22c55e; width: 100%; transition: width 0.1s linear; }
@@ -277,8 +383,8 @@ function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&
 .student-question-view .q-text { font-size: 48px; color: #fff; margin-bottom: 40px; text-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 .student-question-view .q-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1000px; margin: 0 auto; }
 .student-question-view .q-choices .choice { font-size: 28px; padding: 30px; border-radius: 16px; }
+.q-counter { font-size: 24px; color: rgba(255,255,255,0.7); margin-bottom: 10px; font-weight: 700; }
 
-/* Result view - big like teacher */
 .student-result-view { width: 100%; max-width: 1100px; text-align: center; }
 .student-result-view h1 { font-size: 56px; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 .student-result-view .result-good { color: #22c55e; }
@@ -322,29 +428,58 @@ function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&
   font-size: 34px;
   line-height: 1.15;
 }
-.student-result-view .result-chart { background: rgba(255,255,255,0.15); border-radius: 24px; padding: 40px; backdrop-filter: blur(10px); }
-.student-result-view .result-bar { display: flex; align-items: center; margin-bottom: 20px; gap: 20px; }
-.student-result-view .result-bar-label { width: 200px; font-size: 26px; font-weight: 700; color: #fff; text-align: left; }
-.student-result-view .result-bar-track { flex: 1; height: 60px; background: rgba(255,255,255,0.2); border-radius: 12px; overflow: hidden; }
-.student-result-view .result-bar-fill { height: 100%; border-radius: 12px; display: flex; align-items: center; justify-content: flex-end; padding: 0 20px; font-weight: 800; font-size: 24px; color: #fff; min-width: 60px; transition: width 1s ease-out; }
-.student-result-view .result-bar-fill.c0 { background: #ef4444; }
-.student-result-view .result-bar-fill.c1 { background: #3b82f6; }
-.student-result-view .result-bar-fill.c2 { background: #eab308; }
-.student-result-view .result-bar-fill.c3 { background: #22c55e; }
 .student-result-view .result-waiting { font-size: 24px; color: rgba(255,255,255,0.8); margin-top: 30px; }
 
-/* Rank view - big like teacher */
+.result-progress {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.result-progress span {
+  color: rgba(255,255,255,0.8);
+  font-size: 20px;
+  font-weight: 700;
+}
+.progress-track {
+  width: 80%;
+  max-width: 500px;
+  height: 12px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: #22c55e;
+  border-radius: 6px;
+  transition: width 0.5s ease;
+}
+
 .student-rank-view { width: 100%; max-width: 900px; text-align: center; }
 .student-rank-view .rank-label { font-size: 48px; color: #fff; text-align: center; margin-bottom: 40px; text-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 .student-rank-view .rank-row { display: flex; align-items: center; gap: 20px; background: rgba(255,255,255,0.2); padding: 30px 40px; border-radius: 20px; font-weight: 600; color: #fff; font-size: 28px; backdrop-filter: blur(10px); }
-.student-rank-view .rank-row.rank-enter { animation: rewardPop .7s cubic-bezier(.2,1.4,.45,1) both; }
 .student-rank-view .rank-avatar { width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 60px; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
 .student-rank-view .rank-name { flex: 1; font-size: 32px; font-weight: 800; }
-.student-rank-view .rank-medal { font-size: 60px; }
 .student-rank-view .rank-score { font-size: 28px; font-weight: 800; color: #fbbf24; }
-.student-rank-view .rank-hint { color: rgba(255,255,255,.88); font-size: 24px; margin-top: 26px; animation: fadeUp .7s ease both .35s; }
 
-/* Podium view - big like teacher */
+.student-finished-view { width: 100%; text-align: center; }
+.student-finished-view h1 { font-size: 56px; color: #fff; margin-bottom: 20px; }
+.finished-score { font-size: 72px; font-weight: 900; color: #fbbf24; margin: 20px 0; text-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+.finished-stats { display: flex; gap: 30px; justify-content: center; margin-top: 30px; }
+.stat-card {
+  background: rgba(255,255,255,0.15);
+  padding: 20px 40px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+}
+.stat-card span { color: rgba(255,255,255,0.7); font-size: 18px; font-weight: 700; }
+.stat-card strong { color: #fff; font-size: 32px; font-weight: 900; }
+
 .student-podium-view { width: 100%; text-align: center; }
 .student-podium-view .podium-title { font-size: 64px; color: #fff; margin-bottom: 50px; }
 .student-podium-view .podium-card { text-align: center; padding: 40px 60px; border-radius: 20px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); display: inline-block; }
@@ -355,26 +490,10 @@ function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&
 .student-podium-view .podium-score { font-size: 32px; font-weight: 800; color: #fbbf24; margin-top: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
 .student-podium-view .podium-waiting { font-size: 24px; color: rgba(255,255,255,0.8); margin-top: 40px; }
 
-.toast { margin-top:14px; background:#eef2ff; padding:10px;border-radius:8px;color:#3730a3; }
-.answer-toast {
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-weight: 800;
-  animation: toastPop .45s cubic-bezier(.2,1.35,.45,1) both;
-}
-.answer-toast span { font-size: 18px; }
-.answer-toast.good-toast { background: #dcfce7; color: #166534; }
-.answer-toast.bad-toast { background: #fee2e2; color: #991b1b; }
-.answer-toast.waiting-toast { background: #eef2ff; color: #3730a3; }
-
-/* choice button colors */
-.student-question-view .choice.c0, .student-result-view .result-bar-fill.c0 { background: #ef4444; color: #fff; }
-.student-question-view .choice.c1, .student-result-view .result-bar-fill.c1 { background: #3b82f6; color: #fff; }
-.student-question-view .choice.c2, .student-result-view .result-bar-fill.c2 { background: #eab308; color: #fff; }
-.student-question-view .choice.c3, .student-result-view .result-bar-fill.c3 { background: #22c55e; color: #fff; }
+.student-question-view .choice.c0 { background: #ef4444; color: #fff; }
+.student-question-view .choice.c1 { background: #3b82f6; color: #fff; }
+.student-question-view .choice.c2 { background: #eab308; color: #fff; }
+.student-question-view .choice.c3 { background: #22c55e; color: #fff; }
 .student-question-view .choice { border: none; cursor: pointer; transition: transform 0.08s ease, opacity 0.3s ease; }
 .student-question-view .choice { animation: fadeUp .45s ease both; }
 .student-question-view .choice:nth-child(1) { animation-delay: .04s; }
@@ -384,6 +503,7 @@ function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&
 .student-question-view .choice:hover { transform: scale(1.02); }
 .student-question-view .choice.faded { opacity: 0.35; }
 .student-question-view .choice.selected { outline: 4px solid #fff; transform: scale(1.04); }
+
 .screen-burst {
   position: fixed;
   inset: 0;
@@ -406,6 +526,7 @@ function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&
 .screen-burst span:nth-child(3) { --x: -130px; --y: 130px; }
 .screen-burst span:nth-child(4) { --x: 150px; --y: 120px; }
 .screen-burst span:nth-child(5) { --x: 0px; --y: -180px; }
+
 @keyframes rewardPop {
   0% { opacity: 0; transform: translateY(28px) scale(.82); }
   70% { opacity: 1; transform: translateY(-4px) scale(1.04); }
@@ -415,17 +536,12 @@ function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&
   from { opacity: 0; transform: translateY(22px); }
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes toastPop {
-  from { opacity: 0; transform: translateY(12px) scale(.9); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
 @keyframes burstOut {
   0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); }
   20% { opacity: 1; }
   100% { opacity: 0; transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1.4); }
 }
 
-/* quiz starting - big centered */
 #screen h2 { font-size: 48px; color: #fff; margin-bottom: 20px; text-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 #screen .muted { font-size: 24px; color: rgba(255,255,255,0.8); }
 

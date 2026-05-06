@@ -4,13 +4,14 @@ from typing import Optional
 
 from fastapi import APIRouter, Cookie, HTTPException, Body
 
-from ..config import TEACHER_PASSWORD
+from ..config import TEACHER_PASSWORD, DEFAULT_QUESTIONS_PER_STUDENT
 from ..services import (
     quiz_service,
     session_service,
     player_service,
     answer_service,
     scoring_service,
+    random_assignment_service,
 )
 from ..websocket_manager import manager
 
@@ -37,7 +38,6 @@ def _public_player(p: dict) -> dict:
 # ---------- current session status ----------
 @router.get("/current")
 async def current_status():
-    """Public endpoint — anyone can ask what the current room is doing."""
     s = session_service.get_current_session()
     if s is None:
         return {"state": "NONE"}
@@ -45,7 +45,8 @@ async def current_status():
         "state": s["state"],
         "quiz_id": s.get("quiz_id"),
         "session_code": s["session_code"],
-        "current_question_index": s["current_question_index"],
+        "current_question_index": s.get("current_question_index"),
+        "quiz_mode": s.get("quiz_mode", "UNIFIED"),
     }
 
 
@@ -57,23 +58,27 @@ async def launch_quiz(
 ):
     _require_teacher(teacher_auth)
     quiz_id = int(payload.get("quiz_id", 0))
+    quiz_mode = payload.get("quiz_mode", "UNIFIED")
+    num_questions = int(payload.get("num_questions", DEFAULT_QUESTIONS_PER_STUDENT))
+
     try:
-        session = session_service.launch_quiz(quiz_id)
+        session = session_service.launch_quiz(quiz_id, quiz_mode, num_questions)
     except ValueError as e:
         raise HTTPException(400, str(e))
 
-    # Announce the new room so teacher/display/student pages can refresh if needed.
     await manager.broadcast(
         session["session_code"],
         {
             "type": "quiz_attached",
             "quiz_id": quiz_id,
+            "quiz_mode": quiz_mode,
         },
     )
     return {
         "ok": True,
         "session_code": session["session_code"],
         "state": session["state"],
+        "quiz_mode": quiz_mode,
     }
 
 
@@ -83,9 +88,21 @@ async def start_session(teacher_auth: Optional[str] = Cookie(default=None)):
     session = session_service.get_current_session()
     if session is None or session.get("quiz_id") is None:
         raise HTTPException(400, "No quiz is ready to start")
-    session_service.mark_started(session["id"])
-    await _go_to_question(session["session_code"], 0)
-    return {"ok": True}
+
+    quiz_mode = session.get("quiz_mode", "UNIFIED")
+
+    if quiz_mode == "RANDOM":
+        session_service.mark_started(session["id"])
+        session_service.update_state(session["id"], "QUESTION_ACTIVE")
+        await manager.broadcast(
+            session["session_code"],
+            {"type": "quiz_started_random", "quiz_id": session["quiz_id"]},
+        )
+        return {"ok": True, "mode": "RANDOM"}
+    else:
+        session_service.mark_started(session["id"])
+        await _go_to_question(session["session_code"], 0)
+        return {"ok": True, "mode": "UNIFIED"}
 
 
 @router.post("/next")
@@ -187,29 +204,59 @@ async def reset_session(teacher_auth: Optional[str] = Cookie(default=None)):
     session = session_service.get_current_session()
     if session is None:
         return {"ok": True}
-    
+
     old_session_id = session["id"]
     old_code = session["session_code"]
-    
-    # Mark old session as finished
+
     session_service.mark_ended(old_session_id)
-    
-    # Create a new empty waiting session. Keep the old players attached to the
-    # finished session so teacher reports remain historically accurate.
     session_service.ensure_current_session()
-    
-    # Close all student WebSocket connections for old session
+
     await manager.close_students(old_code)
-    
-    # Broadcast to old session code (for any remaining connections)
     await manager.broadcast(old_code, {"type": "quiz_reset"})
-    
+
     return {"ok": True}
+
+
+@router.get("/completion")
+async def get_completion(teacher_auth: Optional[str] = Cookie(default=None)):
+    _require_teacher(teacher_auth)
+    session = session_service.get_current_session()
+    if session is None:
+        raise HTTPException(404, "No active session")
+
+    quiz_mode = session.get("quiz_mode", "UNIFIED")
+
+    if quiz_mode == "RANDOM":
+        completion = random_assignment_service.get_all_player_completion(session["id"])
+    else:
+        quiz = quiz_service.get_quiz(session.get("quiz_id"))
+        total_q = len(quiz["questions"]) if quiz else 0
+        completion = random_assignment_service.get_unified_completion(session["id"], total_q)
+
+    return {"completion": completion, "quiz_mode": quiz_mode}
+
+
+@router.post("/bulk-correct")
+async def bulk_correct(teacher_auth: Optional[str] = Cookie(default=None)):
+    _require_teacher(teacher_auth)
+    session = session_service.get_current_session()
+    if session is None:
+        raise HTTPException(404, "No active session")
+
+    quiz_mode = session.get("quiz_mode", "UNIFIED")
+    if quiz_mode != "RANDOM":
+        raise HTTPException(400, "Bulk correction only for RANDOM mode")
+
+    session_service.update_state(session["id"], "LEADERBOARD")
+    board = scoring_service.leaderboard(session["id"])
+    await manager.broadcast(
+        session["session_code"], {"type": "bulk_correction", "board": board}
+    )
+    return {"ok": True, "board": board}
 
 
 # ---------- helpers ----------
 async def _go_to_question(code: str, index: int) -> None:
-    """Activate a specific question index, or finish session if past the end."""
     session = session_service.get_session_by_code(code)
     quiz = quiz_service.get_quiz(session["quiz_id"])
     if index >= len(quiz["questions"]):
@@ -244,8 +291,6 @@ async def _close_current_question(session: dict) -> None:
         return
 
     payload["type"] = "question_ended"
-    payload["board_before"] = []
-
     await manager.broadcast(session["session_code"], payload)
 
 
@@ -256,7 +301,6 @@ def _question_distribution_payload(session: dict) -> Optional[dict]:
     public_q = session_service.question_public(q)
     correct_choice = q["choices"][q["correct_choice_index"]]
     dist = answer_service.choice_distribution(session["id"], q["id"])
-    board = scoring_service.leaderboard(session["id"])
     total_players = len(player_service.list_players(session["id"]))
     return {
         "type": "distribution_shown",
@@ -267,11 +311,9 @@ def _question_distribution_payload(session: dict) -> Optional[dict]:
         "explanation": q.get("explanation") or "",
         "distribution": dist,
         "total_players": total_players,
-        "board": board,
     }
 
 
-# Called from the student WebSocket when an answer comes in.
 async def submit_answer_and_notify(
     session_code: str, player_token: str, choice_id: int, client_elapsed_ms: int
 ) -> dict:
@@ -298,6 +340,7 @@ async def submit_answer_and_notify(
     elapsed = min(max(server_elapsed_ms, 0), total_ms)
 
     correct_choice_id = q["choices"][q["correct_choice_index"]]["id"]
+    correct_text = q["choices"][q["correct_choice_index"]]["choice_text"]
     result = answer_service.record_answer(
         session_id=session["id"],
         question_id=q["id"],
@@ -328,4 +371,5 @@ async def submit_answer_and_notify(
         "is_correct": result["is_correct"],
         "points": result["points"],
         "total_score": total_score,
+        "correct_text": correct_text,
     }

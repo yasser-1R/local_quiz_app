@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block body_class %}bg-dashboard{% endblock %}
+{% block content %}
+<header class="topbar">
+  <h1>📊 Suivi de {{ progress.profile.nickname }}</h1>
+  <div class="row gap">
+    <a class="btn" href="/teacher/students">← Tous les eleves</a>
+    <a class="btn" href="/teacher/reports">Rapports</a>
+    <a class="btn primary" href="/teacher">Tableau de bord</a>
+  </div>
+</header>
+
+<main class="container">
+  <div class="profile-header">
+    <div class="profile-avatar" style="background: {{ progress.profile.avatar_color or '#6366f1' }};">
+      <span>{{ progress.profile.avatar_character or '🦊' }}</span>
+    </div>
+    <div class="profile-info">
+      <h2>{{ progress.profile.nickname }}</h2>
+      <p class="muted">Membre depuis le {{ progress.profile.created_at or "—" }}</p>
+    </div>
+  </div>
+
+  {% if not progress.sessions %}
+    <div class="card">
+      <p class="muted">Aucune session terminee pour cet eleve.</p>
+    </div>
+  {% else %}
+  <div class="card">
+    <h2>📈 Evolution du niveau</h2>
+    <div class="chart-wrapper">
+      <canvas id="progressChart" height="300"></canvas>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>📊 Taux de reussite par session</h2>
+      <div class="chart-wrapper">
+        <canvas id="successChart" height="250"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📊 Score par session</h2>
+      <div class="chart-wrapper">
+        <canvas id="scoreChart" height="250"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📋 Historique des sessions</h2>
+    <table class="results">
+      <thead>
+        <tr>
+          <th>Session</th>
+          <th>Quiz</th>
+          <th>Date</th>
+          <th>Questions</th>
+          <th>Repondues</th>
+          <th>Correctes</th>
+          <th>Taux</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in progress.sessions %}
+        <tr>
+          <td><code>{{ s.session_code }}</code></td>
+          <td>{{ s.quiz_title or "—" }}</td>
+          <td>{{ (s.started_at or "")[:10] }}</td>
+          <td>{{ s.total_questions }}</td>
+          <td>{{ s.answered }}</td>
+          <td>{{ s.correct }}</td>
+          <td>
+            {% if s.success_rate >= 75 %}
+              <span class="badge success">{{ s.success_rate }}%</span>
+            {% elif s.success_rate >= 50 %}
+              <span class="badge warning">{{ s.success_rate }}%</span>
+            {% else %}
+              <span class="badge danger">{{ s.success_rate }}%</span>
+            {% endif %}
+          </td>
+          <td><strong>{{ s.total_points }}</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const sessions = {{ progress.sessions | tojson }};
+
+if (sessions.length > 0) {
+  const labels = sessions.map((s, i) => `Session ${i + 1}`);
+  const dates = sessions.map(s => (s.started_at || '').slice(0, 10));
+
+  new Chart(document.getElementById('progressChart'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Taux de reussite (%)',
+        data: sessions.map(s => s.success_rate),
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99,102,241,0.1)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        pointBackgroundColor: '#6366f1',
+        borderWidth: 3,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => `${labels[items[0].dataIndex]} - ${dates[items[0].dataIndex]}`,
+            label: (item) => `Reussite: ${item.raw}%`,
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: { callback: v => v + '%' },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('successChart'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Taux de reussite',
+        data: sessions.map(s => s.success_rate),
+        backgroundColor: sessions.map(s =>
+          s.success_rate >= 75 ? '#22c55e' : s.success_rate >= 50 ? '#eab308' : '#ef4444'
+        ),
+        borderRadius: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('scoreChart'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Score',
+        data: sessions.map(s => s.total_points),
+        backgroundColor: '#a855f7',
+        borderRadius: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+</script>
+
+<style>
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.profile-avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.profile-info h2 { margin: 0; color: #1e293b; }
+.profile-info .muted { margin: 4px 0 0; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+.chart-wrapper { max-height: 350px; }
+.badge.success { background: #dcfce7; color: #166534; }
+.badge.warning { background: #fef3c7; color: #92400e; }
+.badge.danger { background: #fee2e2; color: #991b1b; }
+.badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 14px; font-weight: 700; }
+@media (max-width: 768px) {
+  .grid-2 { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}

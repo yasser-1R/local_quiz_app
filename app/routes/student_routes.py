@@ -3,8 +3,8 @@ from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from ..config import APP_TITLE, AVATAR_ACCESSORIES, AVATAR_CHARACTERS, AVATAR_COLORS, TEMPLATES_DIR
-from ..services import player_service, session_service
+from ..config import APP_TITLE, AVATAR_ACCESSORIES, AVATAR_CHARACTERS, AVATAR_COLORS, TEMPLATES_DIR, DEFAULT_QUESTIONS_PER_STUDENT
+from ..services import player_service, session_service, profile_service, random_assignment_service
 from ..websocket_manager import manager
 
 
@@ -16,13 +16,16 @@ PLAYER_COOKIE = "player_token"
 
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    # If this browser already has a valid token for the CURRENT session, skip straight in.
-    token = request.cookies.get(PLAYER_COOKIE)
+    profile_token = request.cookies.get(profile_service.PROFILE_COOKIE)
     cur = session_service.get_current_session()
-    if token and cur:
-        player = player_service.get_player_by_token(token)
-        if player and player["session_id"] == cur["id"]:
-            return RedirectResponse(url="/play", status_code=303)
+
+    if profile_token:
+        profile = profile_service.get_profile_by_token(profile_token)
+        if profile:
+            if cur and cur["state"] not in ("FINISHED",):
+                return RedirectResponse(url="/play", status_code=303)
+            return RedirectResponse(url="/profile", status_code=303)
+
     return templates.TemplateResponse(
         request,
         "student/join.html",
@@ -35,6 +38,55 @@ async def home(request: Request):
             "nickname": "",
         },
     )
+
+
+@router.get("/profile", response_class=HTMLResponse)
+async def profile_page(request: Request):
+    profile_token = request.cookies.get(profile_service.PROFILE_COOKIE)
+    if not profile_token:
+        return RedirectResponse(url="/", status_code=303)
+    profile = profile_service.get_profile_by_token(profile_token)
+    if not profile:
+        return RedirectResponse(url="/", status_code=303)
+
+    return templates.TemplateResponse(
+        request,
+        "student/profile.html",
+        {
+            "app_title": APP_TITLE,
+            "avatar_characters": AVATAR_CHARACTERS,
+            "avatar_colors": AVATAR_COLORS,
+            "avatar_accessories": AVATAR_ACCESSORIES,
+            "profile": profile,
+        },
+    )
+
+
+@router.post("/profile/update")
+async def update_profile(
+    request: Request,
+    nickname: str = Form(...),
+    avatar_character: str = Form(...),
+    avatar_color: str = Form(...),
+    avatar_accessory: str = Form(""),
+):
+    profile_token = request.cookies.get(profile_service.PROFILE_COOKIE)
+    profile = profile_service.get_profile_by_token(profile_token) if profile_token else None
+
+    nickname = nickname.strip()[:20]
+    if not nickname:
+        return RedirectResponse(url="/profile", status_code=303)
+
+    profile = profile_service.create_or_update_profile(
+        nickname=nickname,
+        character=avatar_character,
+        color=avatar_color,
+        accessory=avatar_accessory,
+    )
+
+    resp = RedirectResponse(url="/", status_code=303)
+    resp.set_cookie(profile_service.PROFILE_COOKIE, profile["profile_token"], httponly=True, samesite="lax")
+    return resp
 
 
 @router.post("/join")
@@ -61,15 +113,30 @@ async def do_join(
     if player_service.nickname_taken(session["id"], nickname):
         return _error(request, nickname, "Ce pseudo est deja pris. Choisissez-en un autre.")
 
-    player = player_service.add_player(
-        session_id=session["id"],
+    profile = profile_service.create_or_update_profile(
         nickname=nickname,
         character=avatar_character,
         color=avatar_color,
         accessory=avatar_accessory,
     )
 
-    # Notify lobby listeners
+    player = player_service.add_player(
+        session_id=session["id"],
+        nickname=nickname,
+        character=avatar_character,
+        color=avatar_color,
+        accessory=avatar_accessory,
+        profile_id=profile["id"],
+    )
+
+    quiz_mode = session.get("quiz_mode", "UNIFIED")
+    if quiz_mode == "RANDOM" and session.get("quiz_id"):
+        random_assignment_service.assign_random_questions(
+            session_id=session["id"],
+            player_id=player["id"],
+            quiz_id=session["quiz_id"],
+        )
+
     players = player_service.list_players(session["id"])
     await manager.broadcast(
         session["session_code"],
@@ -83,6 +150,7 @@ async def do_join(
 
     resp = RedirectResponse(url="/play", status_code=303)
     resp.set_cookie(PLAYER_COOKIE, player["token"], httponly=True, samesite="lax")
+    resp.set_cookie(profile_service.PROFILE_COOKIE, profile["profile_token"], httponly=True, samesite="lax")
     return resp
 
 
@@ -110,10 +178,15 @@ async def play_page(request: Request):
         return RedirectResponse(url="/", status_code=303)
     player = player_service.get_player_by_token(token)
     if player is None or player["session_id"] != cur["id"]:
-        # Old session — let them re-join the new room
         resp = RedirectResponse(url="/", status_code=303)
         resp.delete_cookie(PLAYER_COOKIE)
         return resp
+
+    quiz_mode = cur.get("quiz_mode", "UNIFIED")
+    player_questions = []
+    if quiz_mode == "RANDOM":
+        player_questions = random_assignment_service.get_player_questions(cur["id"], player["id"])
+
     return templates.TemplateResponse(
         request,
         "student/play.html",
@@ -121,6 +194,8 @@ async def play_page(request: Request):
             "app_title": APP_TITLE,
             "session": cur,
             "player": player,
+            "quiz_mode": quiz_mode,
+            "player_questions": player_questions,
         },
     )
 

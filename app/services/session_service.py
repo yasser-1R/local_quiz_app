@@ -4,11 +4,13 @@ from typing import Optional
 
 from ..database import db_cursor, get_connection
 from ..utils.code_generator import generate_session_code
+from ..config import DEFAULT_QUESTIONS_PER_STUDENT
 from . import quiz_service
+from . import random_assignment_service
 
 
-# Added WAITING: session exists, no quiz attached yet, players can join and wait.
 STATES = ("WAITING", "LOBBY", "QUESTION_ACTIVE", "QUESTION_CLOSED", "LEADERBOARD", "FINISHED")
+QUIZ_MODES = ("UNIFIED", "RANDOM")
 
 
 def _new_code() -> str:
@@ -84,40 +86,49 @@ def latest_finished_session() -> Optional[dict]:
         conn.close()
 
 
-def launch_quiz(quiz_id: int) -> dict:
+def launch_quiz(quiz_id: int, quiz_mode: str = "UNIFIED", num_questions: int = DEFAULT_QUESTIONS_PER_STUDENT) -> dict:
     """
     Attach a quiz to the current session so teacher can start it.
-    If current session is WAITING (no quiz yet): attach the quiz, move to LOBBY,
-    keep all the players already waiting.
-    If current session already had a quiz (LOBBY/ACTIVE/...): mark it FINISHED and
-    create a brand new one for this quiz.
-    If no current session: create one directly in LOBBY with this quiz.
+    quiz_mode: "UNIFIED" (same questions for all) or "RANDOM" (different questions per student)
     """
     quiz = quiz_service.get_quiz(quiz_id)
     if quiz is None or not quiz["questions"]:
         raise ValueError("quiz must exist and have at least one question")
 
+    if quiz_mode not in QUIZ_MODES:
+        quiz_mode = "UNIFIED"
+
     cur_session = get_current_session()
     if cur_session is None:
-        return _create_raw(quiz_id=quiz_id, state="LOBBY")
-
-    if cur_session["state"] == "WAITING":
-        # Promote the waiting lobby in place — players stay.
         with db_cursor() as cur:
             cur.execute(
-                "UPDATE sessions SET quiz_id=?, state='LOBBY' WHERE id=?",
-                (quiz_id, cur_session["id"]),
+                "INSERT INTO sessions (quiz_id, session_code, state, quiz_mode) VALUES (?,?,?,?)",
+                (quiz_id, _new_code(), "LOBBY", quiz_mode),
+            )
+            sid = cur.lastrowid
+        session = get_session(sid)
+        return session
+
+    if cur_session["state"] == "WAITING":
+        with db_cursor() as cur:
+            cur.execute(
+                "UPDATE sessions SET quiz_id=?, state='LOBBY', quiz_mode=? WHERE id=?",
+                (quiz_id, quiz_mode, cur_session["id"]),
             )
         return get_session(cur_session["id"])
 
-    # An in-progress or fully-formed lobby session already exists → close it
-    # and start a fresh one for the new quiz.
     with db_cursor() as cur:
         cur.execute(
             "UPDATE sessions SET state='FINISHED', ended_at=CURRENT_TIMESTAMP WHERE id=?",
             (cur_session["id"],),
         )
-    return _create_raw(quiz_id=quiz_id, state="LOBBY")
+    with db_cursor() as cur:
+        cur.execute(
+            "INSERT INTO sessions (quiz_id, session_code, state, quiz_mode) VALUES (?,?,?,?)",
+            (quiz_id, _new_code(), "LOBBY", quiz_mode),
+        )
+        sid = cur.lastrowid
+    return get_session(sid)
 
 
 def update_state(session_id: int, state: str) -> None:

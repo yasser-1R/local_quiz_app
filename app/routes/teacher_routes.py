@@ -276,7 +276,6 @@ async def control(request: Request):
 
 @router.get("/results", response_class=HTMLResponse, dependencies=[Depends(require_teacher)])
 async def results(request: Request):
-    # Show results of the most recent FINISHED session (or current if it's finished).
     session = session_service.latest_finished_session()
     if session is None:
         return RedirectResponse(url="/teacher", status_code=303)
@@ -290,5 +289,35 @@ async def results(request: Request):
             "session": session,
             "quiz": quiz,
             "leaderboard": board,
+        },
+    )
+
+
+# ---------- student progress tracking ----------
+@router.get("/students", response_class=HTMLResponse, dependencies=[Depends(require_teacher)])
+async def students_index(request: Request):
+    students = analytics_service.list_all_students()
+    return templates.TemplateResponse(
+        request,
+        "teacher/students.html",
+        {
+            "app_title": APP_TITLE,
+            "students": students,
+        },
+    )
+
+
+@router.get("/students/{profile_id}", response_class=HTMLResponse,
+            dependencies=[Depends(require_teacher)])
+async def student_detail(request: Request, profile_id: int):
+    progress = analytics_service.get_student_progress(profile_id)
+    if progress is None:
+        raise HTTPException(status_code=404)
+    return templates.TemplateResponse(
+        request,
+        "teacher/student_detail.html",
+        {
+            "app_title": APP_TITLE,
+            "progress": progress,
         },
     )

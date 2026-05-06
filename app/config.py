@@ -22,6 +22,10 @@ DEFAULT_QUESTION_TIME = 20          # seconds
 BASE_POINTS = 500
 MAX_SPEED_BONUS = 500
 
+# Quiz modes
+QUIZ_MODES = ["UNIFIED", "RANDOM"]
+DEFAULT_QUESTIONS_PER_STUDENT = 10  # default number of questions in random mode
+
 # Avatars: Kahoot-style — pick a character + a background color + an accessory
 AVATAR_CHARACTERS = [
     "🦊", "🐻", "🐼", "🐨", "🐯", "🦁",
