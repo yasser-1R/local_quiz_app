@@ -3,7 +3,10 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from ..config import APP_TITLE, AVATAR_ACCESSORIES, AVATAR_CHARACTERS, AVATAR_COLORS, TEMPLATES_DIR
+from ..config import (
+    APP_TITLE, AVATAR_ACCESSORIES, AVATAR_CHARACTERS, AVATAR_COLORS,
+    TEMPLATES_DIR, RANDOM_ANSWER_DISPLAY_SECONDS,
+)
 from ..services import player_service, session_service, student_service
 from ..websocket_manager import manager
 
@@ -168,6 +171,7 @@ async def play_page(request: Request):
             "session": cur,
             "player": player,
             "student": student,
+            "random_answer_display_seconds": RANDOM_ANSWER_DISPLAY_SECONDS,
         },
     )
 

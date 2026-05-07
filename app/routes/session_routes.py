@@ -223,12 +223,19 @@ async def reset_session(teacher_auth: Optional[str] = Cookie(default=None)):
 
     old_session_id = session["id"]
     old_code = session["session_code"]
+    conn_mode = session.get("connection_mode", "BLOCKED")
 
     session_service.mark_ended(old_session_id)
     session_service.ensure_current_session()
 
+    # Broadcast BEFORE closing so students receive the redirect signal
+    await manager.broadcast(old_code, {
+        "type": "quiz_reset",
+        "connection_mode": conn_mode,
+    })
+    import asyncio
+    await asyncio.sleep(0.15)
     await manager.close_students(old_code)
-    await manager.broadcast(old_code, {"type": "quiz_reset"})
 
     return {"ok": True}
 

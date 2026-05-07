@@ -59,7 +59,7 @@ body.bg-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
   <div id="leaderboard-view" class="teacher-view" style="display:none;">
     <h1 class="podium-title">Classement complet</h1>
     <div class="full-leaderboard" id="full-leaderboard-container"></div>
-    <button class="teacher-btn secondary" onclick="backToPodium()" style="margin-top:40px;">← Retour au podium</button>
+    <button class="teacher-btn secondary" id="leaderboard-back-btn" onclick="backToPodium()" style="margin-top:40px;">← Retour au podium</button>
   </div>
 
   <!-- ===== RANDOM MODE VIEW ===== -->
@@ -153,14 +153,14 @@ body.bg-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
 #scores-after { position: relative; min-height: 400px; }
 
 .anim-row {
-  display: flex; align-items: center; gap: 16px;
+  display: flex; align-items: center; gap: 18px;
   background: rgba(255,255,255,0.18);
-  padding: 18px 24px; border-radius: 16px;
+  padding: 22px 28px; border-radius: 18px;
   font-weight: 600; position: absolute; left: 0; right: 0;
   transition: top 0.75s cubic-bezier(0.34, 1.56, 0.64, 1),
               opacity 0.4s ease,
               transform 0.5s cubic-bezier(0.34, 1.7, 0.64, 1);
-  color: #fff; font-size: 22px;
+  color: #fff; font-size: 24px;
 }
 .anim-row.rank-1 { background: linear-gradient(135deg, rgba(254,243,199,0.95), rgba(253,230,138,0.95)); color: #92400e; }
 .anim-row.rank-2 { background: linear-gradient(135deg, rgba(243,244,246,0.95), rgba(209,213,219,0.95)); color: #374151; }
@@ -171,8 +171,7 @@ body.bg-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
   50% { box-shadow: 0 0 35px 12px rgba(255,255,255,0.55); }
   100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
 }
-.anim-row.moved-up { background: rgba(34,197,94,0.38) !important; }
-.anim-row.moved-down { background: rgba(239,68,68,0.38) !important; }
+/* rank movement shown via arrow color only, no background change */
 .anim-rank { width: 54px; font-size: 26px; font-weight: 800; }
 .anim-avatar { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 5px 16px rgba(0,0,0,0.25); flex-shrink: 0; }
 .anim-name { flex: 1; font-size: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -342,6 +341,7 @@ const ws = new WebSocket(`${wsProto}://${location.host}/ws/teacher`);
 
 // Session mode — set from server on connect
 let sessionMode = "{{ session.mode }}";
+const leaderboardTopN = {{ leaderboard_top_n }};
 
 // Phase: 'waiting' | 'question' | 'answer' | 'chart' | 'scores' | 'finished' | 'random'
 let phase = 'waiting';
@@ -515,7 +515,7 @@ function showScoresPhase(m) {
     previousRanks[p.id] = p.rank;
   });
 
-  const ROW_H = 78;
+  const ROW_H = 92;
   $scoresAfter.style.minHeight = `${top5.length * ROW_H}px`;
   $scoresAfter.innerHTML = '';
 
@@ -562,10 +562,30 @@ function showScoresPhase(m) {
 }
 
 function showFinalLeaderboard(board) {
-  // For random mode: show TOP 10 leaderboard first, then podium button
   hideAll();
-  $podiumView.style.display = 'block';
-  buildPodiumHTML(board);
+  if (sessionMode === 'RANDOM') {
+    // Random mode: direct top-N list, skip podium
+    const container = document.getElementById('full-leaderboard-container');
+    const topN = board.slice(0, leaderboardTopN);
+    container.innerHTML = topN.map((p, i) => {
+      const medal = p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : '';
+      return `<div class="leaderboard-row rank-${p.rank}" style="animation-delay:${i*60}ms">
+        <span class="lb-rank">${medal || '#'+p.rank}</span>
+        <span class="lb-avatar" style="background:${p.avatar_color||'#6366f1'};">${p.avatar_character||'🦊'}</span>
+        <span class="lb-name">${escapeHtml(p.nickname)}</span>
+        <span class="lb-score">${p.total_score} pts</span>
+      </div>`;
+    }).join('');
+    const backBtn = document.getElementById('leaderboard-back-btn');
+    backBtn.textContent = 'Retour au tableau de bord';
+    backBtn.className = 'teacher-btn danger';
+    backBtn.onclick = endAndReset;
+    document.getElementById('leaderboard-view').querySelector('h1').textContent = '🏆 Classement final';
+    $leaderboard.style.display = 'block';
+  } else {
+    $podiumView.style.display = 'block';
+    buildPodiumHTML(board);
+  }
 }
 
 function buildPodiumHTML(board) {
@@ -599,8 +619,7 @@ function showFullLeaderboard() {
   hideAll();
   $leaderboard.style.display = 'block';
 
-  // Random mode gets top 10; normal mode gets all
-  const showBoard = sessionMode === 'RANDOM' ? finalBoard.slice(0, 10) : finalBoard;
+  const showBoard = sessionMode === 'RANDOM' ? finalBoard.slice(0, leaderboardTopN) : finalBoard;
 
   const container = document.getElementById('full-leaderboard-container');
   container.innerHTML = showBoard.map((p, i) => {

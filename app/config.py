@@ -1,5 +1,20 @@
 """Application configuration."""
-import os
+import os, sys
+
+# Load user-editable settings from settings.py at project root
+_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _root not in sys.path:
+    sys.path.insert(0, _root)
+try:
+    from settings import (  # type: ignore
+        RANDOM_ANSWER_DISPLAY_SECONDS,
+        DEFAULT_CONNECTION_MODE,
+        LEADERBOARD_TOP_N,
+    )
+except ImportError:
+    RANDOM_ANSWER_DISPLAY_SECONDS = 10
+    DEFAULT_CONNECTION_MODE = "BLOCKED"
+    LEADERBOARD_TOP_N = 5
 
 # Server
 HOST = "0.0.0.0"   # 0.0.0.0 = reachable from other PCs on the LAN

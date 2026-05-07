@@ -63,6 +63,7 @@ let currentMode = sessionMode;  // 'NORMAL' or 'RANDOM'
 let randomTotal = 0;
 let randomProgress = 0;
 let autoAdvanceTimer = null;
+const AUTO_ADVANCE_SECONDS = {{ random_answer_display_seconds }};
 
 function onMessage(ev) {
   const m = JSON.parse(ev.data);
@@ -222,11 +223,11 @@ function showRandomResult(m) {
         </div>
         <span class="rpi-label">${progress} / ${total} questions</span>
       </div>
-      ${!isDone ? `<div class="random-next-hint">Prochaine question dans <span id="nextCountdown">3</span>s...</div>` : ''}
+      ${!isDone ? `<div class="random-next-hint">Prochaine question dans <span id="nextCountdown">${AUTO_ADVANCE_SECONDS}</span>s...</div>` : ''}
     </div>`;
 
   if (!isDone) {
-    startAutoAdvance(3);
+    startAutoAdvance(AUTO_ADVANCE_SECONDS);
   } else {
     // Last question answered — server will send random_quiz_complete soon
     $screen.querySelector('.random-result').insertAdjacentHTML('beforeend',
@@ -246,12 +247,10 @@ function showTimeUp() {
         <strong>+0 pts</strong>
         <span>Pas de réponse</span>
       </div>
-      <div class="random-next-hint">Prochaine question dans <span id="nextCountdown">3</span>s...</div>
+      <div class="random-next-hint">Prochaine question dans <span id="nextCountdown">${AUTO_ADVANCE_SECONDS}</span>s...</div>
     </div>`;
 
-  // For time-up in random mode: send a signal to move to next without an answer
-  // We send request_next_question directly (no answer recorded)
-  startAutoAdvance(3, true);
+  startAutoAdvance(AUTO_ADVANCE_SECONDS, true);
 }
 
 function startAutoAdvance(seconds, skipAnswer = false) {

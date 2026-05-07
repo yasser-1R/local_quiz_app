@@ -40,23 +40,23 @@
 
   <!-- Settings Panel -->
   {% if session.state in ('WAITING', 'LOBBY') %}
-  <div class="card">
-    <h2>⚙️ Paramètres de session</h2>
+  <div class="card settings-card">
+    <h2 style="color:#1e293b; margin-bottom:20px;">⚙️ Paramètres de session</h2>
 
     <div class="settings-group">
-      <h3>Mode de quiz</h3>
-      <p class="muted" style="font-size:14px;margin-bottom:12px;">
+      <h3 class="settings-h3">Mode de quiz</h3>
+      <p class="settings-desc">
         <strong>Normal</strong> : questions synchronisées pour tous.<br>
-        <strong>Aléatoire</strong> : chaque élève progresse à son rythme dans un ordre différent.
+        <strong>Aléatoire</strong> : chaque élève progresse à son rythme.
       </p>
       <div class="mode-radio-group">
-        <label class="mode-radio-label {% if session.mode == 'NORMAL' or not session.mode %}active{% endif %}" id="lbl-normal">
+        <label class="mode-radio-label {% if session.mode == 'NORMAL' or not session.mode %}active{% endif %}">
           <input type="radio" name="quiz_mode" value="NORMAL"
                  {% if session.mode == 'NORMAL' or not session.mode %}checked{% endif %}
                  onchange="updateSettings()">
           <span>🎯 Mode Normal</span>
         </label>
-        <label class="mode-radio-label {% if session.mode == 'RANDOM' %}active{% endif %}" id="lbl-random">
+        <label class="mode-radio-label {% if session.mode == 'RANDOM' %}active{% endif %}">
           <input type="radio" name="quiz_mode" value="RANDOM"
                  {% if session.mode == 'RANDOM' %}checked{% endif %}
                  onchange="updateSettings()">
@@ -65,17 +65,24 @@
       </div>
     </div>
 
-    <div class="settings-group" style="margin-top:28px;">
-      <h3>Mode de connexion des élèves</h3>
-      <p class="muted" style="font-size:14px;margin-bottom:12px;">
-        <strong>Invité</strong> : pseudo + avatar, aucun compte requis.<br>
+    <div class="settings-group" style="margin-top:24px;">
+      <h3 class="settings-h3">Connexion des élèves</h3>
+      <p class="settings-desc">
+        <strong>Bloqué</strong> : personne ne peut rejoindre (défaut).<br>
+        <strong>Invité</strong> : pseudo + avatar, sans compte.<br>
         <strong>Inscription</strong> : création de compte avec mot de passe.<br>
         <strong>Connexion</strong> : compte existant requis.
       </p>
       <div class="mode-radio-group">
-        <label class="mode-radio-label {% if not session.connection_mode or session.connection_mode == 'GUEST' %}active{% endif %}">
+        <label class="mode-radio-label {% if not session.connection_mode or session.connection_mode == 'BLOCKED' %}active{% endif %}">
+          <input type="radio" name="conn_mode" value="BLOCKED"
+                 {% if not session.connection_mode or session.connection_mode == 'BLOCKED' %}checked{% endif %}
+                 onchange="updateSettings()">
+          <span>🚫 Bloqué</span>
+        </label>
+        <label class="mode-radio-label {% if session.connection_mode == 'GUEST' %}active{% endif %}">
           <input type="radio" name="conn_mode" value="GUEST"
-                 {% if not session.connection_mode or session.connection_mode == 'GUEST' %}checked{% endif %}
+                 {% if session.connection_mode == 'GUEST' %}checked{% endif %}
                  onchange="updateSettings()">
           <span>👤 Invité</span>
         </label>
@@ -100,38 +107,43 @@
 </main>
 
 <style>
-.settings-group h3 { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 8px; }
-.mode-radio-group { display: flex; flex-direction: column; gap: 10px; }
+/* Settings panel — inside white .card so use dark text */
+.settings-h3 { font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+.settings-desc { font-size: 13px; color: #64748b; margin-bottom: 12px; line-height: 1.55; }
+.mode-radio-group { display: flex; flex-direction: column; gap: 8px; }
 .mode-radio-label {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px 18px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.1);
-  border: 2px solid rgba(255,255,255,0.15);
-  cursor: pointer;
-  transition: all 0.18s ease;
-  color: rgba(255,255,255,0.8);
-  font-size: 16px;
-  font-weight: 600;
-}
-.mode-radio-label input[type=radio] { accent-color: #fff; width: 18px; height: 18px; flex-shrink: 0; }
-.mode-radio-label.active,
-.mode-radio-label:has(input:checked) {
-  background: rgba(255,255,255,0.22);
-  border-color: rgba(255,255,255,0.5);
-  color: #fff;
-}
-.settings-status {
-  margin-top: 14px;
-  padding: 10px 16px;
+  padding: 12px 16px;
   border-radius: 10px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #374151;
   font-size: 15px;
   font-weight: 600;
 }
-.settings-status.ok { background: rgba(34,197,94,0.2); color: #86efac; }
-.settings-status.err { background: rgba(239,68,68,0.2); color: #fca5a5; }
+.mode-radio-label input[type=radio] { accent-color: #6366f1; width: 16px; height: 16px; flex-shrink: 0; }
+.mode-radio-label.active,
+.mode-radio-label:has(input:checked) {
+  background: #eef2ff;
+  border-color: #6366f1;
+  color: #4f46e5;
+}
+.mode-radio-label:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.mode-radio-label.active:hover,
+.mode-radio-label:has(input:checked):hover { background: #eef2ff; }
+.settings-status {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.settings-status.ok { background: #dcfce7; color: #166534; }
+.settings-status.err { background: #fee2e2; color: #991b1b; }
 </style>
 
 <script>
@@ -162,7 +174,6 @@ function renderPlayer(p) {
 
 function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
-// Update all radio labels' active state on change
 document.querySelectorAll('.mode-radio-label input[type=radio]').forEach(radio => {
   radio.addEventListener('change', () => {
     const group = radio.closest('.mode-radio-group');
@@ -173,9 +184,8 @@ document.querySelectorAll('.mode-radio-label input[type=radio]').forEach(radio =
 
 async function updateSettings() {
   const mode = document.querySelector('input[name="quiz_mode"]:checked')?.value || 'NORMAL';
-  const connMode = document.querySelector('input[name="conn_mode"]:checked')?.value || 'GUEST';
+  const connMode = document.querySelector('input[name="conn_mode"]:checked')?.value || 'BLOCKED';
   const status = document.getElementById('settings-status');
-
   try {
     const res = await fetch('/api/session/settings', {
       method: 'POST',
@@ -187,9 +197,7 @@ async function updateSettings() {
       status.className = 'settings-status ok';
       status.style.display = 'block';
       setTimeout(() => { status.style.display = 'none'; }, 2000);
-    } else {
-      throw new Error();
-    }
+    } else { throw new Error(); }
   } catch {
     status.textContent = '✗ Erreur lors de la sauvegarde';
     status.className = 'settings-status err';

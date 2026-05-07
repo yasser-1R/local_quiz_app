@@ -6,7 +6,32 @@
 
 <div class="card avatar-card">
 
-  {% if mode == 'LOGIN' or mode == 'LOGIN_AUTOFILL' %}
+  {% if mode == 'BLOCKED' %}
+  <!-- ===== BLOCKED — waiting for teacher to open session ===== -->
+  <div class="blocked-view">
+    <div class="blocked-icon">🔒</div>
+    <h1>Session verrouillée</h1>
+    <p class="muted">Le professeur n'a pas encore ouvert la session.<br>Patientez, la page se mettra à jour automatiquement.</p>
+    <div class="blocked-dots"><span></span><span></span><span></span></div>
+  </div>
+
+  <script>
+  (function poll() {
+    setTimeout(async () => {
+      try {
+        const r = await fetch('/api/session/current');
+        const d = await r.json();
+        if (d.connection_mode && d.connection_mode !== 'BLOCKED') {
+          window.location.reload();
+        } else {
+          poll();
+        }
+      } catch { poll(); }
+    }, 4000);
+  })();
+  </script>
+
+  {% elif mode == 'LOGIN' or mode == 'LOGIN_AUTOFILL' %}
   <!-- ===== LOGIN FORM ===== -->
   <h1>🔑 Connexion</h1>
   <p class="muted">{{ app_title }}</p>
@@ -176,6 +201,17 @@
   justify-content: center;
   position: relative;
 }
+/* Blocked waiting view */
+.blocked-view { text-align: center; padding: 20px 0; }
+.blocked-icon { font-size: 72px; margin-bottom: 16px; animation: lockPulse 2s ease-in-out infinite; }
+.blocked-view h1 { font-size: 26px; font-weight: 800; color: #1e293b; margin-bottom: 10px; }
+.blocked-view .muted { font-size: 15px; color: #64748b; line-height: 1.6; margin-bottom: 28px; }
+.blocked-dots { display: flex; justify-content: center; gap: 10px; }
+.blocked-dots span { width: 10px; height: 10px; border-radius: 50%; background: #6366f1; animation: dotBounce 1.4s infinite ease-in-out; }
+.blocked-dots span:nth-child(2) { animation-delay: .2s; }
+.blocked-dots span:nth-child(3) { animation-delay: .4s; }
+@keyframes lockPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: .85; } }
+@keyframes dotBounce { 0%,80%,100% { transform: translateY(0); opacity: .5; } 40% { transform: translateY(-12px); opacity: 1; } }
 </style>
 
 {% if mode in ('GUEST', 'SIGNUP') %}

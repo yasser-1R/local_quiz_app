@@ -24,8 +24,11 @@ def _create_raw(
     quiz_id: Optional[int],
     state: str,
     mode: str = "NORMAL",
-    connection_mode: str = "GUEST",
+    connection_mode: str | None = None,
 ) -> dict:
+    if connection_mode is None:
+        from ..config import DEFAULT_CONNECTION_MODE
+        connection_mode = DEFAULT_CONNECTION_MODE
     for _ in range(20):
         code = _new_code()
         try:
@@ -144,8 +147,8 @@ def update_settings(session_id: int, mode: str, connection_mode: str) -> None:
     """Update session mode and connection_mode (teacher can change before starting)."""
     if mode not in ("NORMAL", "RANDOM"):
         mode = "NORMAL"
-    if connection_mode not in ("GUEST", "SIGNUP", "LOGIN"):
-        connection_mode = "GUEST"
+    if connection_mode not in ("BLOCKED", "GUEST", "SIGNUP", "LOGIN"):
+        connection_mode = "BLOCKED"
     with db_cursor() as cur:
         cur.execute(
             "UPDATE sessions SET mode=?, connection_mode=? WHERE id=?",

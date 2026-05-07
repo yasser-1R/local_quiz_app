@@ -9,7 +9,7 @@ from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 
-from ..config import TEACHER_PASSWORD, TEMPLATES_DIR, APP_TITLE
+from ..config import TEACHER_PASSWORD, TEMPLATES_DIR, APP_TITLE, LEADERBOARD_TOP_N
 from ..services import (
     analytics_service,
     quiz_service,
@@ -255,6 +255,7 @@ async def control(request: Request):
             "session": session,
             "quiz": quiz,
             "players": players,
+            "leaderboard_top_n": LEADERBOARD_TOP_N,
         },
     )
 
