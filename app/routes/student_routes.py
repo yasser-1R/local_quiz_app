@@ -1,10 +1,10 @@
 """Student pages (no session codes — one shared room)."""
-from fastapi import APIRouter, Form, HTTPException, Request
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from ..config import APP_TITLE, AVATAR_ACCESSORIES, AVATAR_CHARACTERS, AVATAR_COLORS, TEMPLATES_DIR
-from ..services import player_service, session_service
+from ..services import player_service, session_service, student_service
 from ..websocket_manager import manager
 
 
@@ -12,17 +12,44 @@ router = APIRouter(tags=["student"])
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 PLAYER_COOKIE = "player_token"
+STUDENT_COOKIE = "student_auth"
 
 
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    # If this browser already has a valid token for the CURRENT session, skip straight in.
+    # If already has a valid token for the CURRENT session, skip straight in.
     token = request.cookies.get(PLAYER_COOKIE)
     cur = session_service.get_current_session()
     if token and cur:
         player = player_service.get_player_by_token(token)
         if player and player["session_id"] == cur["id"]:
             return RedirectResponse(url="/play", status_code=303)
+
+    connection_mode = cur.get("connection_mode", "GUEST") if cur else "GUEST"
+
+    # In LOGIN mode: if already authenticated, redirect to join (skip login form)
+    if connection_mode == "LOGIN":
+        student_token = request.cookies.get(STUDENT_COOKIE)
+        if student_token:
+            student = student_service.get_student_by_token(student_token)
+            if student and cur and cur["state"] in ("WAITING", "LOBBY"):
+                # Check not already in session
+                if not player_service.nickname_taken(cur["id"], student["pseudo"]):
+                    return templates.TemplateResponse(
+                        request,
+                        "student/join.html",
+                        {
+                            "app_title": APP_TITLE,
+                            "avatar_characters": AVATAR_CHARACTERS,
+                            "avatar_colors": AVATAR_COLORS,
+                            "avatar_accessories": AVATAR_ACCESSORIES,
+                            "error": None,
+                            "nickname": student["pseudo"],
+                            "connection_mode": "LOGIN_AUTOFILL",
+                            "student": student,
+                        },
+                    )
+
     return templates.TemplateResponse(
         request,
         "student/join.html",
@@ -33,6 +60,8 @@ async def home(request: Request):
             "avatar_accessories": AVATAR_ACCESSORIES,
             "error": None,
             "nickname": "",
+            "connection_mode": connection_mode,
+            "student": None,
         },
     )
 
@@ -50,16 +79,24 @@ async def do_join(
         return _error(request, nickname, "Veuillez entrer un pseudo.")
 
     session = session_service.ensure_current_session()
+    connection_mode = session.get("connection_mode", "GUEST")
+
+    # SIGNUP and LOGIN modes must go through /auth/* endpoints
+    if connection_mode in ("SIGNUP", "LOGIN"):
+        return _error(
+            request, nickname,
+            "Ce mode de connexion nécessite un compte. Utilisez le formulaire ci-dessous.",
+        )
 
     if session["state"] not in ("WAITING", "LOBBY"):
         return _error(
             request,
             nickname,
-            "Un quiz est deja en cours. Demandez au professeur de le terminer.",
+            "Un quiz est déjà en cours. Demandez au professeur de le terminer.",
         )
 
     if player_service.nickname_taken(session["id"], nickname):
-        return _error(request, nickname, "Ce pseudo est deja pris. Choisissez-en un autre.")
+        return _error(request, nickname, "Ce pseudo est déjà pris. Choisissez-en un autre.")
 
     player = player_service.add_player(
         session_id=session["id"],
@@ -69,7 +106,6 @@ async def do_join(
         accessory=avatar_accessory,
     )
 
-    # Notify lobby listeners
     players = player_service.list_players(session["id"])
     await manager.broadcast(
         session["session_code"],
@@ -87,6 +123,8 @@ async def do_join(
 
 
 def _error(request, nickname, message):
+    cur = session_service.get_current_session()
+    connection_mode = cur.get("connection_mode", "GUEST") if cur else "GUEST"
     return templates.TemplateResponse(
         request,
         "student/join.html",
@@ -97,6 +135,8 @@ def _error(request, nickname, message):
             "avatar_accessories": AVATAR_ACCESSORIES,
             "error": message,
             "nickname": nickname,
+            "connection_mode": connection_mode,
+            "student": None,
         },
         status_code=400,
     )
@@ -110,10 +150,16 @@ async def play_page(request: Request):
         return RedirectResponse(url="/", status_code=303)
     player = player_service.get_player_by_token(token)
     if player is None or player["session_id"] != cur["id"]:
-        # Old session — let them re-join the new room
         resp = RedirectResponse(url="/", status_code=303)
         resp.delete_cookie(PLAYER_COOKIE)
         return resp
+
+    # Determine if this student has a persistent account
+    student_token = request.cookies.get(STUDENT_COOKIE)
+    student = None
+    if student_token:
+        student = student_service.get_student_by_token(student_token)
+
     return templates.TemplateResponse(
         request,
         "student/play.html",
@@ -121,6 +167,32 @@ async def play_page(request: Request):
             "app_title": APP_TITLE,
             "session": cur,
             "player": player,
+            "student": student,
+        },
+    )
+
+
+@router.get("/student/stats", response_class=HTMLResponse)
+async def student_stats(request: Request):
+    """Historical performance stats for logged-in students."""
+    student_token = request.cookies.get(STUDENT_COOKIE)
+    if not student_token:
+        return RedirectResponse(url="/", status_code=303)
+
+    student = student_service.get_student_by_token(student_token)
+    if student is None:
+        resp = RedirectResponse(url="/", status_code=303)
+        resp.delete_cookie(STUDENT_COOKIE)
+        return resp
+
+    stats = student_service.get_student_stats(student["id"])
+    return templates.TemplateResponse(
+        request,
+        "student/stats.html",
+        {
+            "app_title": APP_TITLE,
+            "student": student,
+            "stats": stats,
         },
     )
 

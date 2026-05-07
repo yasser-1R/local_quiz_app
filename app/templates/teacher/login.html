@@ -1,26 +1,23 @@
 {% extends "base.html" %}
 {% block body_class %}bg-gradient center{% endblock %}
 {% block content %}
-<div class="card narrow login-card">
-  <div class="login-icon">🎓</div>
-  <h1>Acces Professeur</h1>
-  <p class="muted">{{ app_title }}</p>
-  {% if request.query_params.get('bad') %}
-    <div class="error">Mot de passe incorrect. Veuillez reessayer.</div>
-  {% endif %}
-  <form method="post" action="/teacher/login">
-    <label for="password">Entrez le mot de passe:</label>
-    <input type="password" name="password" id="password" autofocus required placeholder="Votre mot de passe..." />
-    <button class="btn primary full" type="submit">Connexion</button>
-  </form>
-  <p class="muted small">Le mot de passe est defini dans <code>app/config.py</code></p>
-</div>
-{% endblock %}
+<div class="card avatar-card" style="text-align:center; padding: 36px 32px;">
+  <div style="font-size:52px; margin-bottom:8px;">🎓</div>
+  <h1 style="margin-bottom:4px;">Accès Professeur</h1>
+  <p class="muted" style="margin-bottom:24px;">{{ app_title }}</p>
 
-{% block extra_styles %}
-<style>
-.login-card { text-align: center; }
-.login-icon { font-size: 48px; margin-bottom: 10px; }
-.login-card input { text-align: center; }
-</style>
+  {% if request.query_params.get('bad') %}
+    <div class="error">Mot de passe incorrect. Veuillez réessayer.</div>
+  {% endif %}
+
+  <form method="post" action="/teacher/login">
+    <input type="password" name="password" autofocus required
+           placeholder="Mot de passe..."
+           style="text-align:center; margin-bottom:12px;" />
+    <button class="btn primary full big" type="submit">Se connecter →</button>
+  </form>
+  <p class="muted small" style="margin-top:16px;">
+    Mot de passe défini dans <code>app/config.py</code>
+  </p>
+</div>
 {% endblock %}

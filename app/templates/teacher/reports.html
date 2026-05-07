@@ -1,49 +1,57 @@
 {% extends "base.html" %}
 {% block body_class %}bg-dashboard{% endblock %}
 {% block content %}
-<header class="topbar">
-  <h1>{{ app_title }} - Rapports</h1>
-  <div class="row gap">
-    <a class="btn" href="/teacher">Mes quizzes</a>
-    <a class="btn" href="/teacher/lobby">Salle d'attente</a>
-    <a class="btn" href="/display" target="_blank">Projecteur</a>
-    <a class="btn" href="/teacher/logout">Deconnexion</a>
+
+<header class="dashboard-header">
+  <div class="logo">
+    <span class="logo-icon">🎓</span>
+    <h1>{{ app_title }}</h1>
   </div>
+  <nav class="nav-links">
+    <a class="btn-nav" href="/teacher">Mes quizzes</a>
+    <a class="btn-nav active" href="/teacher/reports">Rapports</a>
+    <a class="btn-nav" href="/teacher/lobby">Salle d'attente</a>
+    <a class="btn-nav" href="/display" target="_blank">Projecteur</a>
+    <a class="btn-nav" href="/teacher/logout">Déconnexion</a>
+  </nav>
 </header>
 
-<main class="container">
-  <div class="row space-between">
+<main class="dashboard-main">
+  <div class="quiz-list-header">
     <div>
-      <h2>Sessions archivees</h2>
-      <p class="muted">Rapports generes a partir des quiz termines.</p>
+      <h2 style="font-size:24px;font-weight:700;color:#1e293b;margin:0 0 4px;">Sessions archivées</h2>
+      <p style="color:#64748b;font-size:14px;margin:0;">Rapports générés à partir des quiz terminés.</p>
     </div>
-    <a class="btn primary" href="/teacher">Retour au tableau de bord</a>
   </div>
 
   {% if not sessions %}
-    <div class="card">
-      <p class="muted">Aucun rapport disponible. Terminez un quiz pour creer une archive.</p>
-    </div>
+  <div class="empty-state">
+    <p>📊 Aucun rapport disponible</p>
+    <span class="muted">Terminez un quiz pour créer une archive.</span>
+  </div>
   {% else %}
-    <div class="quiz-stack">
-      {% for session in sessions %}
-        <div class="card quiz-item">
-          <div class="quiz-item-info">
-            <h3>{{ session.quiz_title or "Quiz supprime" }}</h3>
-            <p class="muted">
-              Session {{ session.session_code }} -
-              {{ session.player_count }} eleve(s) -
-              {{ session.question_count }} question(s)
-            </p>
-            <p class="small">Fin: {{ session.ended_at or "Non renseignee" }}</p>
-          </div>
-          <div class="quiz-item-actions">
-            <a class="btn primary" href="/teacher/reports/{{ session.id }}">Voir le rapport</a>
-            <a class="btn" href="/teacher/reports/{{ session.id }}/export.csv">Exporter CSV</a>
-          </div>
+  <div class="quiz-list">
+    {% for session in sessions %}
+    <div class="quiz-card">
+      <div class="quiz-info">
+        <h3>{{ session.quiz_title or "Quiz supprimé" }}</h3>
+        <p>
+          {{ session.player_count }} élève{{ 's' if session.player_count != 1 }} ·
+          {{ session.question_count }} question{{ 's' if session.question_count != 1 }}
+        </p>
+        <div class="quiz-meta">
+          <span>Terminé le {{ session.ended_at[:10] if session.ended_at else '—' }}</span>
+          <span class="dot"></span>
+          <span>Session {{ session.session_code }}</span>
         </div>
-      {% endfor %}
+      </div>
+      <div class="quiz-actions">
+        <a class="btn-launch" href="/teacher/reports/{{ session.id }}">Voir le rapport</a>
+        <a class="btn-edit" href="/teacher/reports/{{ session.id }}/export.csv">⬇ CSV</a>
+      </div>
     </div>
+    {% endfor %}
+  </div>
   {% endif %}
 </main>
 {% endblock %}

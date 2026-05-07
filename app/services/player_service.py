@@ -8,10 +8,11 @@ from ..utils.code_generator import generate_player_token
 
 def _player_row(row) -> dict:
     d = dict(row)
-    # Provide fallbacks in case of old rows
     d.setdefault("avatar_character", "🦊")
     d.setdefault("avatar_color", "#6366f1")
     d.setdefault("avatar_accessory", "")
+    d.setdefault("student_id", None)
+    d.setdefault("random_progress", -1)
     return d
 
 
@@ -20,7 +21,7 @@ def list_players(session_id: int) -> list:
     try:
         rows = conn.execute(
             "SELECT id, token, nickname, avatar_character, avatar_color, avatar_accessory, "
-            "       is_connected "
+            "       student_id, random_progress, is_connected "
             "FROM players WHERE session_id=? ORDER BY joined_at",
             (session_id,),
         ).fetchall()
@@ -52,15 +53,22 @@ def _valid(character: str, color: str, accessory: str):
     return character, color, accessory
 
 
-def add_player(session_id: int, nickname: str, character: str, color: str, accessory: str) -> dict:
+def add_player(
+    session_id: int,
+    nickname: str,
+    character: str,
+    color: str,
+    accessory: str,
+    student_id: Optional[int] = None,
+) -> dict:
     character, color, accessory = _valid(character, color, accessory)
     token = generate_player_token()
     with db_cursor() as cur:
         cur.execute(
             "INSERT INTO players "
-            "(session_id, token, nickname, avatar_character, avatar_color, avatar_accessory) "
-            "VALUES (?,?,?,?,?,?)",
-            (session_id, token, nickname, character, color, accessory),
+            "(session_id, token, nickname, avatar_character, avatar_color, avatar_accessory, student_id) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (session_id, token, nickname, character, color, accessory, student_id),
         )
         pid = cur.lastrowid
     return {
@@ -71,6 +79,8 @@ def add_player(session_id: int, nickname: str, character: str, color: str, acces
         "avatar_character": character,
         "avatar_color": color,
         "avatar_accessory": accessory,
+        "student_id": student_id,
+        "random_progress": -1,
     }
 
 
@@ -93,8 +103,15 @@ def set_connected(token: str, connected: bool) -> None:
         )
 
 
+def update_random_progress(player_id: int, new_progress: int) -> None:
+    with db_cursor() as cur:
+        cur.execute(
+            "UPDATE players SET random_progress=? WHERE id=?",
+            (new_progress, player_id),
+        )
+
+
 def move_player_to_session(player_id: int, new_session_id: int) -> None:
-    """Used when teacher launches a new quiz and we carry players across."""
     with db_cursor() as cur:
         cur.execute(
             "UPDATE players SET session_id=? WHERE id=?",

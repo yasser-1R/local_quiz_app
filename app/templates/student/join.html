@@ -1,7 +1,113 @@
 {% extends "base.html" %}
 {% block body_class %}bg-gradient center{% endblock %}
 {% block content %}
+
+{% set mode = connection_mode or 'GUEST' %}
+
 <div class="card avatar-card">
+
+  {% if mode == 'LOGIN' or mode == 'LOGIN_AUTOFILL' %}
+  <!-- ===== LOGIN FORM ===== -->
+  <h1>🔑 Connexion</h1>
+  <p class="muted">{{ app_title }}</p>
+
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+  {% if mode == 'LOGIN_AUTOFILL' and student %}
+  <!-- Already authenticated: quick-join -->
+  <div class="auth-welcome">
+    <div class="avatar-preview" style="background: {{ student.avatar_color or '#6366f1' }}; width:80px;height:80px;font-size:44px;margin:0 auto 12px;">
+      <span class="avatar-char">{{ student.avatar_character or '🦊' }}</span>
+      {% if student.avatar_accessory %}
+        <span class="avatar-acc">{{ student.avatar_accessory }}</span>
+      {% endif %}
+    </div>
+    <p style="font-size:20px;font-weight:700;">Bonjour, <strong>{{ student.pseudo }}</strong> !</p>
+  </div>
+  <form method="post" action="/auth/login">
+    <input type="hidden" name="nickname" value="{{ student.pseudo }}">
+    <label>Mot de passe</label>
+    <input type="password" name="password" required autofocus placeholder="Votre mot de passe" />
+    <button class="btn primary full big" type="submit">Entrer 🚪</button>
+  </form>
+  <p class="muted" style="margin-top:12px;font-size:14px;">
+    Pas vous ? <a href="/auth/logout" style="color:#a5b4fc;">Changer de compte</a>
+  </p>
+
+  {% else %}
+  <form method="post" action="/auth/login">
+    <label>Pseudo</label>
+    <input name="nickname" autocomplete="off" maxlength="20" required autofocus
+           value="{{ nickname }}" placeholder="Votre pseudo" />
+    <label>Mot de passe</label>
+    <input type="password" name="password" required placeholder="Votre mot de passe" />
+    <button class="btn primary full big" type="submit">Entrer 🚪</button>
+  </form>
+  {% endif %}
+
+  {% elif mode == 'SIGNUP' %}
+  <!-- ===== SIGNUP FORM ===== -->
+  <h1>📝 Créer un compte</h1>
+  <p class="muted">{{ app_title }}</p>
+
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+  <div class="avatar-preview-wrap">
+    <div id="preview" class="avatar-preview"
+         style="background: var(--preview-color, #6366f1);">
+      <span id="previewChar" class="avatar-char">🦊</span>
+      <span id="previewAcc" class="avatar-acc"></span>
+    </div>
+  </div>
+
+  <form method="post" action="/auth/signup" id="signupForm">
+    <label>Pseudo</label>
+    <input name="nickname" autocomplete="off" maxlength="20" required autofocus
+           value="{{ nickname }}" placeholder="Choisissez un pseudo" />
+    <label>Mot de passe <span style="font-size:13px;opacity:.7;">(min. 4 caractères)</span></label>
+    <input type="password" name="password" required minlength="4"
+           placeholder="Choisissez un mot de passe" />
+
+    <h3 class="picker-title">Personnage</h3>
+    <div class="picker-grid" id="charGrid">
+      {% for ch in avatar_characters %}
+        <button type="button" class="picker-cell char-cell{% if loop.first %} selected{% endif %}"
+                data-char="{{ ch }}">{{ ch }}</button>
+      {% endfor %}
+    </div>
+
+    <h3 class="picker-title">Couleur</h3>
+    <div class="color-row" id="colorRow">
+      {% for c in avatar_colors %}
+        <button type="button" class="color-dot{% if loop.first %} selected{% endif %}"
+                data-color="{{ c.value }}" style="background:{{ c.value }};"
+                aria-label="{{ c.name }}"></button>
+      {% endfor %}
+    </div>
+
+    <h3 class="picker-title">Accessoire</h3>
+    <div class="picker-grid small" id="accGrid">
+      {% for a in avatar_accessories %}
+        <button type="button"
+                class="picker-cell acc-cell{% if loop.first %} selected{% endif %}"
+                data-acc="{{ a.value }}">
+          {% if a.value %}{{ a.value }}{% else %}∅{% endif %}
+        </button>
+      {% endfor %}
+    </div>
+
+    <input type="hidden" name="avatar_character" id="avatarChar"
+           value="{{ avatar_characters[0] }}" />
+    <input type="hidden" name="avatar_color" id="avatarColor"
+           value="{{ avatar_colors[0].value }}" />
+    <input type="hidden" name="avatar_accessory" id="avatarAcc" value="" />
+
+    <button class="btn primary full big" type="submit">Créer mon compte 🚀</button>
+    <button type="button" id="randomBtn" class="btn full">🎲 Aléatoire</button>
+  </form>
+
+  {% else %}
+  <!-- ===== GUEST FORM (default) ===== -->
   <h1>🎮 Rejoindre le quiz</h1>
   <p class="muted">{{ app_title }}</p>
 
@@ -55,10 +161,24 @@
     <input type="hidden" name="avatar_accessory" id="avatarAcc" value="" />
 
     <button class="btn primary full big" type="submit">Entrer 🚪</button>
-    <button type="button" id="randomBtn" class="btn full">🎲 Aleatoire</button>
+    <button type="button" id="randomBtn" class="btn full">🎲 Aléatoire</button>
   </form>
+  {% endif %}
+
 </div>
 
+<style>
+.auth-welcome { text-align:center; margin-bottom:18px; }
+.avatar-preview {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+</style>
+
+{% if mode in ('GUEST', 'SIGNUP') %}
 <script>
   const charGrid  = document.getElementById('charGrid');
   const colorRow  = document.getElementById('colorRow');
@@ -77,38 +197,43 @@
     updatePreview();
   }
   function updatePreview() {
-    preview.style.setProperty('--preview-color', inpColor.value);
-    preview.style.background = inpColor.value;
-    pChar.textContent = inpChar.value;
-    pAcc.textContent  = inpAcc.value;
+    if (preview) {
+      preview.style.setProperty('--preview-color', inpColor.value);
+      preview.style.background = inpColor.value;
+    }
+    if (pChar) pChar.textContent = inpChar.value;
+    if (pAcc) pAcc.textContent = inpAcc.value;
   }
 
-  charGrid.addEventListener('click', e => {
+  if (charGrid) charGrid.addEventListener('click', e => {
     const b = e.target.closest('.char-cell'); if (!b) return;
     pick(charGrid, b, b.dataset.char, inpChar);
   });
-  colorRow.addEventListener('click', e => {
+  if (colorRow) colorRow.addEventListener('click', e => {
     const b = e.target.closest('.color-dot'); if (!b) return;
     pick(colorRow, b, b.dataset.color, inpColor);
   });
-  accGrid.addEventListener('click', e => {
+  if (accGrid) accGrid.addEventListener('click', e => {
     const b = e.target.closest('.acc-cell'); if (!b) return;
     pick(accGrid, b, b.dataset.acc, inpAcc);
   });
 
   function randomize() {
     const r = (arr) => arr[Math.floor(Math.random()*arr.length)];
-    const chars  = Array.from(charGrid.querySelectorAll('.char-cell'));
-    const colors = Array.from(colorRow.querySelectorAll('.color-dot'));
-    const accs   = Array.from(accGrid.querySelectorAll('.acc-cell'));
-    pick(charGrid, r(chars), r(chars).dataset.char, inpChar);
-    pick(colorRow, r(colors), r(colors).dataset.color, inpColor);
-    pick(accGrid,  r(accs),   r(accs).dataset.acc,    inpAcc);
+    const chars  = charGrid ? Array.from(charGrid.querySelectorAll('.char-cell')) : [];
+    const colors = colorRow ? Array.from(colorRow.querySelectorAll('.color-dot')) : [];
+    const accs   = accGrid  ? Array.from(accGrid.querySelectorAll('.acc-cell')) : [];
+    if (chars.length)  pick(charGrid, r(chars),  r(chars).dataset.char,   inpChar);
+    if (colors.length) pick(colorRow, r(colors), r(colors).dataset.color, inpColor);
+    if (accs.length)   pick(accGrid,  r(accs),   r(accs).dataset.acc,     inpAcc);
   }
 
-  document.getElementById('randomBtn').onclick = randomize;
+  const randomBtn = document.getElementById('randomBtn');
+  if (randomBtn) randomBtn.onclick = randomize;
 
   // Auto-randomize on load
   randomize();
 </script>
+{% endif %}
+
 {% endblock %}

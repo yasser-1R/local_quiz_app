@@ -1,13 +1,27 @@
 {% extends "base.html" %}
-{% block body_class %}bg-light{% endblock %}
+{% block body_class %}bg-dashboard{% endblock %}
 {% block content %}
-<header class="topbar">
-  <h1>🎓 Modifier le quiz</h1>
-  <a class="btn" href="/teacher">← Retour</a>
+
+<header class="dashboard-header">
+  <div class="logo">
+    <span class="logo-icon">🎓</span>
+    <h1>{{ app_title }}</h1>
+  </div>
+  <nav class="nav-links">
+    <a class="btn-nav active" href="/teacher">Mes quizzes</a>
+    <a class="btn-nav" href="/teacher/reports">Rapports</a>
+    <a class="btn-nav" href="/teacher/lobby">Salle d'attente</a>
+    <a class="btn-nav" href="/display" target="_blank">Projecteur</a>
+    <a class="btn-nav" href="/teacher/logout">Déconnexion</a>
+  </nav>
 </header>
 
-<main class="container">
-  <div class="card">
+<main class="dashboard-main">
+  <div class="quiz-list-header">
+    <h2 style="font-size:24px;font-weight:700;color:#1e293b;margin:0;">Modifier — {{ quiz.title }}</h2>
+    <a class="btn-edit" href="/teacher">← Retour</a>
+  </div>
+  <div class="quiz-card" style="display:block; padding:28px;">
     <div id="editor"
          data-quiz-id="{{ quiz.id }}"
          data-existing='{{ quiz | tojson | safe }}'></div>

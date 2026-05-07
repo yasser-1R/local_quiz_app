@@ -39,11 +39,24 @@ CREATE TABLE IF NOT EXISTS sessions (
     quiz_id                  INTEGER,
     session_code             TEXT UNIQUE NOT NULL,
     state                    TEXT NOT NULL DEFAULT 'WAITING',
+    mode                     TEXT NOT NULL DEFAULT 'NORMAL',
+    connection_mode          TEXT NOT NULL DEFAULT 'GUEST',
     current_question_index   INTEGER NOT NULL DEFAULT -1,
     current_question_started REAL,
     started_at               TEXT,
     ended_at                 TEXT,
     FOREIGN KEY (quiz_id) REFERENCES quizzes(id)
+);
+
+CREATE TABLE IF NOT EXISTS students (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    pseudo           TEXT UNIQUE NOT NULL,
+    password_hash    TEXT NOT NULL,
+    avatar_character TEXT,
+    avatar_color     TEXT,
+    avatar_accessory TEXT,
+    auth_token       TEXT,
+    created_at       TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS players (
@@ -54,9 +67,12 @@ CREATE TABLE IF NOT EXISTS players (
     avatar_character  TEXT,
     avatar_color      TEXT,
     avatar_accessory  TEXT,
+    student_id        INTEGER,
+    random_progress   INTEGER NOT NULL DEFAULT -1,
     joined_at         TEXT DEFAULT CURRENT_TIMESTAMP,
     is_connected      INTEGER NOT NULL DEFAULT 1,
-    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(id)
 );
 
 CREATE TABLE IF NOT EXISTS answers (
@@ -80,6 +96,17 @@ CREATE TABLE IF NOT EXISTS final_scores (
     correct_answers        INTEGER NOT NULL DEFAULT 0,
     average_response_time  INTEGER,
     final_rank             INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS player_question_orders (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id  INTEGER NOT NULL,
+    player_id   INTEGER NOT NULL,
+    question_id INTEGER NOT NULL,
+    order_index INTEGER NOT NULL,
+    UNIQUE(session_id, player_id, order_index),
+    FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
 );
 """
 
@@ -116,11 +143,8 @@ def _table_sql(conn, name):
 def _rebuild_table(conn, tname):
     """Rename `tname` to a scratch name, recreate from SCHEMA, copy shared columns back."""
     tmp = f"{tname}__migrate_tmp"
-    # drop any leftover tmp from a previous failed run
     conn.execute(f"DROP TABLE IF EXISTS {tmp}")
     conn.execute(f"ALTER TABLE {tname} RENAME TO {tmp}")
-    # Re-run SCHEMA — because every CREATE has IF NOT EXISTS, only the missing
-    # ones (the ones we just renamed away) actually get created.
     conn.executescript(SCHEMA)
     new_cols = _column_names(conn, tname)
     old_cols = _column_names(conn, tmp)
@@ -132,26 +156,19 @@ def _rebuild_table(conn, tname):
 
 def _migrate(conn) -> None:
     """Add columns / relax constraints for DBs that were created by older versions."""
-    # IMPORTANT: on SQLite 3.26+, ALTER TABLE ... RENAME also rewrites foreign
-    # key references in OTHER tables. That breaks us: when we rename sessions →
-    # sessions_old and then recreate `sessions`, the players/answers FKs point
-    # to the now-dropped sessions_old. Turning on "legacy_alter_table" keeps
-    # the old behaviour (FK text untouched) while we rebuild.
     conn.execute("PRAGMA foreign_keys = OFF")
     conn.execute("PRAGMA legacy_alter_table = ON")
 
     try:
-        # ---- step 1: repair any table whose FK still references sessions_old
-        # (happens on a DB that was touched by the previous, buggy migration).
+        # Repair any table whose FK still references sessions_old
         for tname in ("players", "answers", "final_scores"):
             sql = _table_sql(conn, tname)
             if "sessions_old" in sql:
                 _rebuild_table(conn, tname)
 
-        # drop any orphan sessions_old left behind
         conn.execute("DROP TABLE IF EXISTS sessions_old")
 
-        # ---- step 2: players table — add avatar_* columns if missing
+        # players table — add avatar_* columns if missing (legacy)
         cols = _column_names(conn, "players")
         if "avatar_character" not in cols:
             if "avatar" in cols:
@@ -167,10 +184,30 @@ def _migrate(conn) -> None:
                 conn.execute("ALTER TABLE players ADD COLUMN avatar_color TEXT")
                 conn.execute("ALTER TABLE players ADD COLUMN avatar_accessory TEXT")
 
-        # ---- step 3: sessions.quiz_id used to be NOT NULL → rebuild to allow NULL
+        # players — add student_id and random_progress if missing
+        if "student_id" not in cols:
+            conn.execute("ALTER TABLE players ADD COLUMN student_id INTEGER")
+        if "random_progress" not in cols:
+            conn.execute(
+                "ALTER TABLE players ADD COLUMN random_progress INTEGER NOT NULL DEFAULT -1"
+            )
+
+        # sessions.quiz_id used to be NOT NULL → rebuild to allow NULL
         sql = _table_sql(conn, "sessions")
         if "quiz_id                  INTEGER NOT NULL" in sql:
             _rebuild_table(conn, "sessions")
+
+        # sessions — add mode and connection_mode if missing
+        cols = _column_names(conn, "sessions")
+        if "mode" not in cols:
+            conn.execute(
+                "ALTER TABLE sessions ADD COLUMN mode TEXT NOT NULL DEFAULT 'NORMAL'"
+            )
+        if "connection_mode" not in cols:
+            conn.execute(
+                "ALTER TABLE sessions ADD COLUMN connection_mode TEXT NOT NULL DEFAULT 'GUEST'"
+            )
+
     finally:
         conn.execute("PRAGMA legacy_alter_table = OFF")
         conn.execute("PRAGMA foreign_keys = ON")

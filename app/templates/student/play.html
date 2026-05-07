@@ -11,7 +11,13 @@
     </div>
     <b style="margin-left:8px;">{{ player.nickname }}</b>
   </div>
-  <div><span id="score">0 pts</span> &middot; <a class="btn" href="/leave">Quitter</a></div>
+  <div>
+    <span id="score">0 pts</span>
+    {% if student %}
+      &middot; <a class="btn" href="/student/stats">Mes stats</a>
+    {% endif %}
+    &middot; <a class="btn" href="/leave">Quitter</a>
+  </div>
 </header>
 
 <main class="teacher-screen">
@@ -24,9 +30,10 @@
 </main>
 
 <script>
-const token = "{{ player.token }}";
-const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
+const token      = "{{ player.token }}";
+const wsProto    = location.protocol === 'https:' ? 'wss' : 'ws';
 const myNickname = "{{ player.nickname }}";
+const sessionMode = "{{ session.mode }}";
 
 let ws;
 function connect() {
@@ -39,6 +46,7 @@ connect();
 const $screen = document.getElementById('screen');
 const $score  = document.getElementById('score');
 
+// State
 let startedAt = 0;
 let answered = false;
 let timeLimit = 0;
@@ -49,17 +57,32 @@ let streak = 0;
 let lastPoints = 0;
 let lastAcceptedCorrect = null;
 let pendingAnswerResult = null;
+let currentMode = sessionMode;  // 'NORMAL' or 'RANDOM'
+
+// Random mode state
+let randomTotal = 0;
+let randomProgress = 0;
+let autoAdvanceTimer = null;
 
 function onMessage(ev) {
   const m = JSON.parse(ev.data);
-  if (m.type === 'question_started') showQuestion(m.question, m.started_at);
-  else if (m.type === 'question_ended') showResult(m);
-  else if (m.type === 'scores_shown') showMyRank(m.board);
+  if (m.mode) currentMode = m.mode.toUpperCase();
+
+  if (m.type === 'question_started') {
+    if (m.mode === 'random') {
+      randomTotal = m.total;
+      randomProgress = m.index;
+    }
+    showQuestion(m.question, m.started_at, m.mode);
+  }
+  else if (m.type === 'question_ended')  showResult(m);
+  else if (m.type === 'scores_shown')    showMyRank(m.board);
   else if (m.type === 'session_finished') showFinal(m.board);
-  else if (m.type === 'answer_result') showSubmitted(m);
-  else if (m.type === 'quiz_attached') showQuizStarting();
+  else if (m.type === 'answer_result')   showSubmitted(m);
+  else if (m.type === 'quiz_attached')   showQuizStarting();
+  else if (m.type === 'random_quiz_complete') showRandomComplete(m);
   else if (m.type === 'quiz_reset') {
-    alert('Le quiz est termine. Retour a la page de connexion.');
+    alert('Le quiz est terminé. Retour à la page de connexion.');
     window.location.href = '/';
   }
 }
@@ -67,10 +90,11 @@ function onMessage(ev) {
 function showQuizStarting() {
   $screen.innerHTML = `
     <h2>🎯 Le professeur lance le quiz!</h2>
-    <p class="muted">Preparez-vous...</p>`;
+    <p class="muted">Préparez-vous...</p>`;
 }
 
-function showQuestion(q, started) {
+function showQuestion(q, started, mode) {
+  clearAutoAdvance();
   timeLimit = q.time_limit;
   startedAt = started * 1000;
   answered = false;
@@ -78,8 +102,15 @@ function showQuestion(q, started) {
   lastPoints = 0;
   lastAcceptedCorrect = null;
   pendingAnswerResult = null;
+
+  const isRandom = (mode === 'random');
+  const progressHtml = isRandom
+    ? `<div class="q-random-progress">Question ${randomProgress + 1} sur ${randomTotal}</div>`
+    : '';
+
   $screen.innerHTML = `
     <div class="student-question-view">
+      ${progressHtml}
       <div class="q-progress"><div id="bar" class="q-bar"></div></div>
       <h1 class="q-timer" id="timer">${timeLimit}s</h1>
       <h2 class="q-text">${escapeHtml(q.text)}</h2>
@@ -89,13 +120,15 @@ function showQuestion(q, started) {
         `).join('')}
       </div>
     </div>`;
+
   document.querySelectorAll('.answer-btn').forEach(btn => {
-    btn.onclick = () => submitAnswer(parseInt(btn.dataset.id, 10), parseInt(btn.dataset.idx, 10));
+    btn.onclick = () => submitAnswer(parseInt(btn.dataset.id, 10), parseInt(btn.dataset.idx, 10), isRandom);
   });
-  runTimer();
+
+  runTimer(isRandom);
 }
 
-function runTimer(){
+function runTimer(isRandom) {
   clearInterval(tick);
   const ends = startedAt + timeLimit * 1000;
   tick = setInterval(() => {
@@ -104,35 +137,170 @@ function runTimer(){
     const b = document.getElementById('bar');
     if (t) t.textContent = left.toFixed(1) + 's';
     if (b) b.style.width = `${(left / timeLimit) * 100}%`;
-    if (left <= 0) { clearInterval(tick); if(t) t.textContent = '0s'; }
+    if (left <= 0) {
+      clearInterval(tick);
+      if (t) t.textContent = '0s';
+      if (isRandom && !answered) {
+        // Time's up in random mode — auto-advance without answer
+        showTimeUp();
+      }
+    }
   }, 100);
 }
 
-function submitAnswer(choiceId, choiceIdx){
+function submitAnswer(choiceId, choiceIdx, isRandom) {
   if (answered) return;
   answered = true;
   myLastAnswer = choiceIdx;
+
   document.querySelectorAll('.answer-btn').forEach(b => {
-    if (parseInt(b.dataset.idx) === choiceIdx) {
-      b.classList.add('selected');
-    } else {
-      b.classList.add('faded');
-    }
+    if (parseInt(b.dataset.idx) === choiceIdx) b.classList.add('selected');
+    else b.classList.add('faded');
   });
+
   const elapsed = Date.now() - startedAt;
   ws.send(JSON.stringify({type: 'submit_answer', choice_id: choiceId, elapsed_ms: elapsed}));
 }
 
-function showSubmitted(m){
+function showSubmitted(m) {
   if (!m.ok) return;
-  pendingAnswerResult = m;
-  const info = document.createElement('div');
-  info.className = 'toast answer-toast waiting-toast';
-  info.innerHTML = '<strong>Reponse envoyee</strong><span>Resultat a la fin du temps</span>';
-  $screen.appendChild(info);
+
+  if (m.mode === 'random') {
+    // Random mode: rich immediate feedback
+    showRandomResult(m);
+  } else {
+    // Normal mode: show "waiting" toast
+    pendingAnswerResult = m;
+    const info = document.createElement('div');
+    info.className = 'toast answer-toast waiting-toast';
+    info.innerHTML = '<strong>Réponse envoyée</strong><span>Résultat à la fin du temps</span>';
+    $screen.appendChild(info);
+  }
 }
 
-function showResult(m){
+// ===== RANDOM MODE RESULT =====
+
+function showRandomResult(m) {
+  clearInterval(tick);
+  clearAutoAdvance();
+
+  // Update score counter
+  if (m.total_score !== undefined) {
+    animateHeaderScore(currentScore, m.total_score);
+    currentScore = m.total_score;
+  }
+
+  lastPoints = m.points || 0;
+  lastAcceptedCorrect = !!m.is_correct;
+  streak = m.is_correct ? streak + 1 : 0;
+
+  triggerBurst(m.is_correct ? 'good' : 'bad');
+
+  const correctText = m.correct_choice_text || '';
+  const explanation = m.explanation || '';
+  const progress = m.progress || 0;
+  const total = m.total_questions || randomTotal;
+  const isDone = m.player_done;
+
+  $screen.innerHTML = `
+    <div class="student-result-view random-result">
+      <h1 class="${m.is_correct ? 'result-good' : 'result-bad'}">
+        ${m.is_correct ? '✅ Correct!' : (myLastAnswer !== null ? '❌ Faux' : '⏰ Temps écoulé')}
+      </h1>
+      <div class="result-motivation ${m.is_correct ? 'good-panel' : 'bad-panel'}">
+        <strong>${m.is_correct ? `+${lastPoints} pts` : 'Continue!'}</strong>
+        <span>${streak > 1 ? `Série de ${streak} bonnes réponses 🔥` : (m.is_correct ? 'Excellent!' : 'Prochaine question')}</span>
+      </div>
+      <div class="correct-choice-card">
+        <span>Bonne réponse</span>
+        <strong>${escapeHtml(correctText)}</strong>
+      </div>
+      ${explanation ? `<p class="result-explanation">${escapeHtml(explanation)}</p>` : ''}
+      <div class="random-progress-indicator">
+        <div class="rpi-bar-track">
+          <div class="rpi-bar-fill" style="width:${Math.round((progress/total)*100)}%"></div>
+        </div>
+        <span class="rpi-label">${progress} / ${total} questions</span>
+      </div>
+      ${!isDone ? `<div class="random-next-hint">Prochaine question dans <span id="nextCountdown">3</span>s...</div>` : ''}
+    </div>`;
+
+  if (!isDone) {
+    startAutoAdvance(3);
+  } else {
+    // Last question answered — server will send random_quiz_complete soon
+    $screen.querySelector('.random-result').insertAdjacentHTML('beforeend',
+      `<p class="muted" style="margin-top:20px;">Calcul du classement...</p>`
+    );
+  }
+}
+
+function showTimeUp() {
+  clearInterval(tick);
+  answered = true;
+
+  $screen.innerHTML = `
+    <div class="student-result-view random-result">
+      <h1 style="color:#fbbf24;">⏰ Temps écoulé!</h1>
+      <div class="result-motivation bad-panel">
+        <strong>+0 pts</strong>
+        <span>Pas de réponse</span>
+      </div>
+      <div class="random-next-hint">Prochaine question dans <span id="nextCountdown">3</span>s...</div>
+    </div>`;
+
+  // For time-up in random mode: send a signal to move to next without an answer
+  // We send request_next_question directly (no answer recorded)
+  startAutoAdvance(3, true);
+}
+
+function startAutoAdvance(seconds, skipAnswer = false) {
+  let remaining = seconds;
+  const el = document.getElementById('nextCountdown');
+
+  clearAutoAdvance();
+  autoAdvanceTimer = setInterval(() => {
+    remaining--;
+    if (el) el.textContent = remaining;
+    if (remaining <= 0) {
+      clearAutoAdvance();
+      if (skipAnswer) {
+        ws.send(JSON.stringify({type: 'request_next_question'}));
+      } else {
+        ws.send(JSON.stringify({type: 'request_next_question'}));
+      }
+    }
+  }, 1000);
+}
+
+function clearAutoAdvance() {
+  if (autoAdvanceTimer) {
+    clearInterval(autoAdvanceTimer);
+    autoAdvanceTimer = null;
+  }
+}
+
+function showRandomComplete(m) {
+  clearInterval(tick);
+  clearAutoAdvance();
+
+  const score = m.total_score || currentScore;
+  $screen.innerHTML = `
+    <div class="student-podium-view">
+      <h1 class="podium-title" style="font-size:52px;">✅ Quiz terminé!</h1>
+      <div class="podium-card top-rank">
+        <div class="podium-avatar" style="background:{{ player.avatar_color }};">{{ player.avatar_character }}</div>
+        <div class="podium-name">{{ player.nickname }}</div>
+        <div class="podium-score">${score} pts</div>
+        <div style="color:rgba(255,255,255,.8);font-size:18px;margin-top:8px;">Vous avez répondu à toutes les questions!</div>
+      </div>
+      <p class="podium-waiting">Attendez le classement final...</p>
+    </div>`;
+}
+
+// ===== NORMAL MODE RESULT =====
+
+function showResult(m) {
   clearInterval(tick);
   if (pendingAnswerResult) {
     lastPoints = pendingAnswerResult.points || 0;
@@ -145,39 +313,26 @@ function showResult(m){
     : myLastAnswer !== null && myLastAnswer === m.correct_choice_index;
   streak = wasCorrect ? streak + 1 : 0;
   triggerBurst(wasCorrect ? 'good' : 'bad');
-  
+
   $screen.innerHTML = `
     <div class="student-result-view">
       <h1 class="${wasCorrect ? 'result-good' : 'result-bad'}">
-        ${wasCorrect ? '✅ Correct!' : (myLastAnswer !== null ? '❌ Faux' : '⏰ Pas de reponse')}
+        ${wasCorrect ? '✅ Correct!' : (myLastAnswer !== null ? '❌ Faux' : '⏰ Pas de réponse')}
       </h1>
       <div class="result-motivation ${wasCorrect ? 'good-panel' : 'bad-panel'}">
         <strong>${wasCorrect ? `+${lastPoints} pts` : 'Garde le rythme'}</strong>
-        <span>${streak > 1 ? `Serie de ${streak} bonnes reponses` : (wasCorrect ? 'Excellent depart' : 'La prochaine peut tout changer')}</span>
+        <span>${streak > 1 ? `Série de ${streak} bonnes réponses` : (wasCorrect ? 'Excellent départ' : 'La prochaine peut tout changer')}</span>
       </div>
       <div class="correct-choice-card">
-        <span>Bonne reponse</span>
+        <span>Bonne réponse</span>
         <strong>${escapeHtml(m.question.choices[m.correct_choice_index].text)}</strong>
       </div>
       ${m.explanation ? `<p class="result-explanation">${escapeHtml(m.explanation)}</p>` : ''}
-      <div class="result-chart" style="display:none;">
-        ${m.question.choices.map((c, i) => {
-          const count = m.distribution[c.id] || 0;
-          const pct = Math.round((count / (m.total_players || 1)) * 100);
-          const isCorrect = i === m.correct_choice_index;
-          return `<div class="result-bar">
-            <div class="result-bar-label ${isCorrect ? 'correct' : ''}">${isCorrect ? '✓ ' : ''}${escapeHtml(c.text)}</div>
-            <div class="result-bar-track">
-              <div class="result-bar-fill c${i}" style="width:${pct}%">${count}</div>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
       <p class="result-waiting">En attente du classement...</p>
     </div>`;
 }
 
-function showMyRank(board){
+function showMyRank(board) {
   const me = board.find(p => p.nickname === myNickname);
   const rank = me ? me.rank : '-';
   const score = me ? me.total_score : 0;
@@ -200,11 +355,12 @@ function showMyRank(board){
         <span class="rank-medal">${medal || '#'+rank}</span>
         <span class="rank-score">${score} pts</span>
       </div>
-      <p class="rank-hint">${rank <= 3 ? 'Tu es dans le podium!' : 'Continue, le podium est jouable.'}</p>
+      <p class="rank-hint">${rank <= 3 ? 'Tu es dans le podium! 🎉' : 'Continue, le podium est jouable.'}</p>
     </div>`;
 }
 
-function showFinal(board){
+function showFinal(board) {
+  clearAutoAdvance();
   const me = board.find(p => p.nickname === myNickname);
   const rank = me ? me.rank : '-';
   const score = me ? me.total_score : 0;
@@ -218,7 +374,7 @@ function showFinal(board){
 
   $screen.innerHTML = `
     <div class="student-podium-view">
-      <h1 class="podium-title">🎉 Quiz termine!</h1>
+      <h1 class="podium-title">🎉 Quiz terminé!</h1>
       <div class="podium-card ${rank <= 3 ? 'top-rank' : ''}">
         <div class="podium-avatar" style="background:${avatarColor};">${avatarChar}</div>
         ${medal ? `<div class="podium-medal">${medal}</div>` : ''}
@@ -250,27 +406,18 @@ function triggerBurst(kind) {
   setTimeout(() => burst.remove(), 900);
 }
 
-function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 </script>
 
 <style>
-/* teacher-screen container - centered, full height */
-.teacher-screen {
-  min-height: 100vh;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Waiting view */
+.teacher-screen { min-height: 100vh; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .waiting-center { text-align:center; }
 .waiting-center h1 { font-size: 56px; color: #fff; margin-bottom: 20px; }
 .waiting-center .muted { font-size: 24px; color: rgba(255,255,255,0.8); }
 
-/* Question view - big like teacher */
+/* Question view */
 .student-question-view { width: 100%; max-width: 1200px; text-align: center; }
+.q-random-progress { font-size: 22px; color: rgba(255,255,255,0.85); font-weight: 700; margin-bottom: 16px; }
 .student-question-view .q-progress { width: 100%; height: 20px; background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; margin-bottom: 30px; }
 .student-question-view .q-bar { height: 100%; background: #22c55e; width: 100%; transition: width 0.1s linear; }
 .student-question-view .q-timer { font-size: 140px; font-weight: 800; color: #fff; text-shadow: 0 8px 30px rgba(0,0,0,0.3); margin: 0; line-height: 1; }
@@ -278,62 +425,30 @@ function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&
 .student-question-view .q-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1000px; margin: 0 auto; }
 .student-question-view .q-choices .choice { font-size: 28px; padding: 30px; border-radius: 16px; }
 
-/* Result view - big like teacher */
+/* Result view */
 .student-result-view { width: 100%; max-width: 1100px; text-align: center; }
 .student-result-view h1 { font-size: 56px; color: #fff; text-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 .student-result-view .result-good { color: #22c55e; }
 .student-result-view .result-bad { color: #ef4444; }
 .student-result-view .result-explanation { font-size: 24px; color: #fff; margin: 20px 0; }
-.result-motivation {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 16px 28px;
-  border-radius: 18px;
-  margin: 6px 0 18px;
-  color: #fff;
-  animation: rewardPop .65s cubic-bezier(.2,1.45,.45,1) both;
-}
+.result-motivation { display: inline-flex; flex-direction: column; gap: 4px; padding: 16px 28px; border-radius: 18px; margin: 6px 0 18px; color: #fff; animation: rewardPop .65s cubic-bezier(.2,1.45,.45,1) both; }
 .result-motivation strong { font-size: 38px; line-height: 1; }
 .result-motivation span { font-size: 18px; font-weight: 700; }
 .result-motivation.good-panel { background: rgba(34,197,94,.28); box-shadow: 0 14px 40px rgba(34,197,94,.25); }
 .result-motivation.bad-panel { background: rgba(239,68,68,.24); box-shadow: 0 14px 40px rgba(239,68,68,.2); }
-.correct-choice-card {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: min(680px, 92vw);
-  background: rgba(255,255,255,.16);
-  border: 2px solid rgba(255,255,255,.25);
-  border-radius: 22px;
-  padding: 24px 30px;
-  margin: 8px 0 18px;
-  color: #fff;
-  backdrop-filter: blur(10px);
-  animation: rewardPop .7s cubic-bezier(.2,1.45,.45,1) both .15s;
-}
-.correct-choice-card span {
-  color: rgba(255,255,255,.75);
-  font-size: 18px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-.correct-choice-card strong {
-  font-size: 34px;
-  line-height: 1.15;
-}
-.student-result-view .result-chart { background: rgba(255,255,255,0.15); border-radius: 24px; padding: 40px; backdrop-filter: blur(10px); }
-.student-result-view .result-bar { display: flex; align-items: center; margin-bottom: 20px; gap: 20px; }
-.student-result-view .result-bar-label { width: 200px; font-size: 26px; font-weight: 700; color: #fff; text-align: left; }
-.student-result-view .result-bar-track { flex: 1; height: 60px; background: rgba(255,255,255,0.2); border-radius: 12px; overflow: hidden; }
-.student-result-view .result-bar-fill { height: 100%; border-radius: 12px; display: flex; align-items: center; justify-content: flex-end; padding: 0 20px; font-weight: 800; font-size: 24px; color: #fff; min-width: 60px; transition: width 1s ease-out; }
-.student-result-view .result-bar-fill.c0 { background: #ef4444; }
-.student-result-view .result-bar-fill.c1 { background: #3b82f6; }
-.student-result-view .result-bar-fill.c2 { background: #eab308; }
-.student-result-view .result-bar-fill.c3 { background: #22c55e; }
+.correct-choice-card { display: inline-flex; flex-direction: column; gap: 8px; min-width: min(680px, 92vw); background: rgba(255,255,255,.16); border: 2px solid rgba(255,255,255,.25); border-radius: 22px; padding: 24px 30px; margin: 8px 0 18px; color: #fff; backdrop-filter: blur(10px); animation: rewardPop .7s cubic-bezier(.2,1.45,.45,1) both .15s; }
+.correct-choice-card span { color: rgba(255,255,255,.75); font-size: 18px; font-weight: 800; text-transform: uppercase; }
+.correct-choice-card strong { font-size: 34px; line-height: 1.15; }
 .student-result-view .result-waiting { font-size: 24px; color: rgba(255,255,255,0.8); margin-top: 30px; }
 
-/* Rank view - big like teacher */
+/* Random mode specific */
+.random-progress-indicator { margin: 20px auto 0; max-width: 500px; }
+.rpi-bar-track { height: 12px; background: rgba(255,255,255,0.2); border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+.rpi-bar-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #86efac); border-radius: 8px; transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1); min-width: 8px; }
+.rpi-label { font-size: 16px; color: rgba(255,255,255,0.8); font-weight: 700; }
+.random-next-hint { margin-top: 20px; font-size: 20px; color: rgba(255,255,255,0.7); font-weight: 600; animation: fadeUp .5s ease both .3s; }
+
+/* Rank view */
 .student-rank-view { width: 100%; max-width: 900px; text-align: center; }
 .student-rank-view .rank-label { font-size: 48px; color: #fff; text-align: center; margin-bottom: 40px; text-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 .student-rank-view .rank-row { display: flex; align-items: center; gap: 20px; background: rgba(255,255,255,0.2); padding: 30px 40px; border-radius: 20px; font-weight: 600; color: #fff; font-size: 28px; backdrop-filter: blur(10px); }
@@ -344,37 +459,28 @@ function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&
 .student-rank-view .rank-score { font-size: 28px; font-weight: 800; color: #fbbf24; }
 .student-rank-view .rank-hint { color: rgba(255,255,255,.88); font-size: 24px; margin-top: 26px; animation: fadeUp .7s ease both .35s; }
 
-/* Podium view - big like teacher */
+/* Podium view */
 .student-podium-view { width: 100%; text-align: center; }
 .student-podium-view .podium-title { font-size: 64px; color: #fff; margin-bottom: 50px; }
 .student-podium-view .podium-card { text-align: center; padding: 40px 60px; border-radius: 20px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); display: inline-block; }
+.student-podium-view .podium-card.top-rank { background: linear-gradient(135deg,rgba(254,243,199,.25),rgba(253,230,138,.2)); border: 2px solid rgba(253,230,138,.4); }
 .student-podium-view .podium-avatar { width: 140px; height: 140px; border-radius: 50%; margin: 0 auto 20px; font-size: 80px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 30px rgba(0,0,0,0.3); }
 .student-podium-view .podium-medal { font-size: 80px; margin-bottom: 10px; }
 .student-podium-view .podium-name { font-size: 36px; font-weight: 800; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.3); word-break: break-word; }
 .student-podium-view .podium-rank { font-size: 24px; font-weight: 700; color: rgba(255,255,255,0.9); margin-top: 10px; }
-.student-podium-view .podium-score { font-size: 32px; font-weight: 800; color: #fbbf24; margin-top: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+.student-podium-view .podium-score { font-size: 32px; font-weight: 800; color: #fbbf24; margin-top: 10px; }
 .student-podium-view .podium-waiting { font-size: 24px; color: rgba(255,255,255,0.8); margin-top: 40px; }
 
 .toast { margin-top:14px; background:#eef2ff; padding:10px;border-radius:8px;color:#3730a3; }
-.answer-toast {
-  display: inline-flex;
-  align-items: center;
-  gap: 14px;
-  border-radius: 999px;
-  padding: 12px 18px;
-  font-weight: 800;
-  animation: toastPop .45s cubic-bezier(.2,1.35,.45,1) both;
-}
+.answer-toast { display: inline-flex; align-items: center; gap: 14px; border-radius: 999px; padding: 12px 18px; font-weight: 800; animation: toastPop .45s cubic-bezier(.2,1.35,.45,1) both; }
 .answer-toast span { font-size: 18px; }
-.answer-toast.good-toast { background: #dcfce7; color: #166534; }
-.answer-toast.bad-toast { background: #fee2e2; color: #991b1b; }
 .answer-toast.waiting-toast { background: #eef2ff; color: #3730a3; }
 
-/* choice button colors */
-.student-question-view .choice.c0, .student-result-view .result-bar-fill.c0 { background: #ef4444; color: #fff; }
-.student-question-view .choice.c1, .student-result-view .result-bar-fill.c1 { background: #3b82f6; color: #fff; }
-.student-question-view .choice.c2, .student-result-view .result-bar-fill.c2 { background: #eab308; color: #fff; }
-.student-question-view .choice.c3, .student-result-view .result-bar-fill.c3 { background: #22c55e; color: #fff; }
+/* Choice buttons */
+.student-question-view .choice.c0 { background: #ef4444; color: #fff; }
+.student-question-view .choice.c1 { background: #3b82f6; color: #fff; }
+.student-question-view .choice.c2 { background: #eab308; color: #fff; }
+.student-question-view .choice.c3 { background: #22c55e; color: #fff; }
 .student-question-view .choice { border: none; cursor: pointer; transition: transform 0.08s ease, opacity 0.3s ease; }
 .student-question-view .choice { animation: fadeUp .45s ease both; }
 .student-question-view .choice:nth-child(1) { animation-delay: .04s; }
@@ -384,48 +490,22 @@ function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&
 .student-question-view .choice:hover { transform: scale(1.02); }
 .student-question-view .choice.faded { opacity: 0.35; }
 .student-question-view .choice.selected { outline: 4px solid #fff; transform: scale(1.04); }
-.screen-burst {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2000;
-}
-.screen-burst span {
-  position: absolute;
-  left: 50%;
-  top: 48%;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #fbbf24;
-  animation: burstOut .85s ease-out forwards;
-}
+
+/* Burst animation */
+.screen-burst { position: fixed; inset: 0; pointer-events: none; z-index: 2000; }
+.screen-burst span { position: absolute; left: 50%; top: 48%; width: 14px; height: 14px; border-radius: 50%; background: #fbbf24; animation: burstOut .85s ease-out forwards; }
 .screen-burst.bad span { background: #93c5fd; }
 .screen-burst span:nth-child(1) { --x: -190px; --y: -110px; }
 .screen-burst span:nth-child(2) { --x: 180px; --y: -120px; }
 .screen-burst span:nth-child(3) { --x: -130px; --y: 130px; }
 .screen-burst span:nth-child(4) { --x: 150px; --y: 120px; }
 .screen-burst span:nth-child(5) { --x: 0px; --y: -180px; }
-@keyframes rewardPop {
-  0% { opacity: 0; transform: translateY(28px) scale(.82); }
-  70% { opacity: 1; transform: translateY(-4px) scale(1.04); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(22px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes toastPop {
-  from { opacity: 0; transform: translateY(12px) scale(.9); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes burstOut {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); }
-  20% { opacity: 1; }
-  100% { opacity: 0; transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1.4); }
-}
 
-/* quiz starting - big centered */
+@keyframes rewardPop { 0% { opacity: 0; transform: translateY(28px) scale(.82); } 70% { opacity: 1; transform: translateY(-4px) scale(1.04); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes toastPop { from { opacity: 0; transform: translateY(12px) scale(.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes burstOut { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.4); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1.4); } }
+
 #screen h2 { font-size: 48px; color: #fff; margin-bottom: 20px; text-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 #screen .muted { font-size: 24px; color: rgba(255,255,255,0.8); }
 

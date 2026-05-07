@@ -1,71 +1,96 @@
 {% extends "base.html" %}
 {% block body_class %}bg-dashboard{% endblock %}
 {% block content %}
-<header class="topbar">
-  <h1>🎓 {{ app_title }}</h1>
-  <div class="row gap">
-    <a class="btn active" href="/teacher/dashboard">Mes quizzes</a>
-    <a class="btn" href="/teacher/reports">Rapports</a>
-    <a class="btn" href="/teacher/lobby">Salle d'attente</a>
-    <a class="btn" href="/display" target="_blank">Projecteur</a>
-    <a class="btn" href="/teacher/logout">Deconnexion</a>
+
+<header class="dashboard-header">
+  <div class="logo">
+    <span class="logo-icon">🎓</span>
+    <h1>{{ app_title }}</h1>
   </div>
+  <nav class="nav-links">
+    <a class="btn-nav active" href="/teacher">Mes quizzes</a>
+    <a class="btn-nav" href="/teacher/reports">Rapports</a>
+    <a class="btn-nav" href="/teacher/lobby">Salle d'attente</a>
+    <a class="btn-nav" href="/display" target="_blank">Projecteur</a>
+    <a class="btn-nav" href="/teacher/logout">Déconnexion</a>
+  </nav>
 </header>
 
-<main class="container">
+<main class="dashboard-main">
+
   {% if current %}
-    <div class="card room-banner">
+  <div class="active-session-card">
+    <div class="session-info">
+      <div class="session-indicator"></div>
       <div>
-        <h3 style="margin:0;">Session active</h3>
-        <p class="muted" style="margin:4px 0 0;">
+        <h3>Session active</h3>
+        <p>
           {% if current.state == 'WAITING' %}
             En attente du lancement du quiz.
           {% elif current.state == 'LOBBY' %}
-            Quiz charge — salle d'attente ouverte.
+            Quiz chargé — salle d'attente ouverte.
+          {% elif current.state == 'RANDOM_ACTIVE' %}
+            Quiz aléatoire en cours.
           {% elif current.state in ('QUESTION_ACTIVE', 'QUESTION_CLOSED', 'LEADERBOARD') %}
-            Quiz en cours
+            Quiz en cours.
+          {% elif current.state == 'FINISHED' %}
+            Quiz terminé.
           {% endif %}
         </p>
       </div>
-      <div class="row gap">
-        <span class="badge big">{{ waiting_count }} joueurs</span>
-        {% if current.state in ('QUESTION_ACTIVE', 'QUESTION_CLOSED', 'LEADERBOARD') %}
-          <a class="btn primary" href="/teacher/control">Controle</a>
-        {% elif current.state == 'LOBBY' %}
-          <a class="btn primary" href="/teacher/lobby">Salle</a>
-        {% else %}
-          <a class="btn" href="/teacher/lobby">Salle d'attente</a>
-        {% endif %}
-      </div>
     </div>
+    <div class="session-actions">
+      <span class="player-count">{{ waiting_count }} joueur{{ 's' if waiting_count != 1 }}</span>
+      {% if current.state in ('QUESTION_ACTIVE', 'QUESTION_CLOSED', 'LEADERBOARD', 'RANDOM_ACTIVE') %}
+        <a class="btn-action primary" href="/teacher/control">Contrôle ▶</a>
+      {% elif current.state == 'LOBBY' %}
+        <a class="btn-action primary" href="/teacher/lobby">Salle d'attente ▶</a>
+      {% else %}
+        <a class="btn-action" href="/teacher/lobby">Salle d'attente</a>
+      {% endif %}
+    </div>
+  </div>
   {% endif %}
 
-  <div class="row space-between">
+  <div class="quiz-list-header">
     <h2>Mes quizzes</h2>
-    <a class="btn primary" href="/teacher/quiz/new">+ Nouveau quiz</a>
+    <a class="btn-create" href="/teacher/quiz/new">
+      <span>+</span> Nouveau quiz
+    </a>
   </div>
 
   {% if not quizzes %}
-    <p class="muted">Aucun quiz. Creez-en un pour commencer.</p>
-  {% endif %}
-
-  <div class="quiz-stack">
+  <div class="empty-state">
+    <p>📝 Aucun quiz pour l'instant</p>
+    <span class="muted">Créez votre premier quiz pour commencer.</span>
+  </div>
+  {% else %}
+  <div class="quiz-list">
     {% for q in quizzes %}
-    <div class="card quiz-item">
-      <div class="quiz-item-info">
+    <div class="quiz-card">
+      <div class="quiz-info">
         <h3>{{ q.title }}</h3>
-        <p class="muted">{{ q.description or "Aucune description" }}</p>
-        <p class="small">{{ q.category or "—" }} • {{ q.question_count }} question(s)</p>
+        {% if q.description %}
+          <p>{{ q.description }}</p>
+        {% endif %}
+        <div class="quiz-meta">
+          {% if q.category %}<span>{{ q.category }}</span><span class="dot"></span>{% endif %}
+          <span>{{ q.question_count }} question{{ 's' if q.question_count != 1 }}</span>
+        </div>
       </div>
-      <div class="quiz-item-actions">
-        <button class="btn primary" onclick="launchQuiz({{ q.id }})">▶ Lancer</button>
-        <a class="btn" href="/teacher/quiz/{{ q.id }}/edit">Modifier</a>
-        <button class="btn" onclick="duplicateQuiz({{ q.id }})">Dupliquer</button>
-        <button class="btn danger" onclick="deleteQuiz({{ q.id }})">Supprimer</button>
+      <div class="quiz-actions">
+        <button class="btn-launch" onclick="launchQuiz({{ q.id }})">
+          <span>▶</span> Lancer
+        </button>
+        <a class="btn-edit" href="/teacher/quiz/{{ q.id }}/edit">Modifier</a>
+        <button class="btn-icon" title="Dupliquer" onclick="duplicateQuiz({{ q.id }})">⧉</button>
+        <button class="btn-icon danger" title="Supprimer" onclick="deleteQuiz({{ q.id }})">🗑</button>
       </div>
     </div>
     {% endfor %}
   </div>
+  {% endif %}
+
 </main>
 
 <script>
@@ -83,7 +108,7 @@ async function duplicateQuiz(id) {
   window.location.reload();
 }
 async function deleteQuiz(id) {
-  if (!confirm('Supprimer ce quiz definitivement?')) return;
+  if (!confirm('Supprimer ce quiz définitivement ?')) return;
   await fetch(`/api/quizzes/${id}`, {method: 'DELETE'});
   window.location.reload();
 }

@@ -350,6 +350,10 @@ p { margin: 0 0 .6em; }
 .bg-gradient .muted { opacity: .85; }
 .bg-gradient .card { color: #222; background: #fff; }
 .bg-gradient .card .muted { color: #667; }
+/* headings inside white cards on gradient must be dark, not white */
+.bg-gradient .card h1,
+.bg-gradient .card h2,
+.bg-gradient .card h3 { color: #1e293b; }
 
 .center { display:flex; align-items:center; justify-content:center; min-height:100vh; flex-direction:column; }
 
@@ -983,4 +987,44 @@ input:focus, textarea:focus { outline: 2px solid #6366f1; border-color: #6366f1;
     grid-template-columns: 1fr;
     gap: 6px;
   }
+}
+
+/* ========== AUTH HELPERS ========== */
+.auth-welcome { text-align: center; margin-bottom: 18px; }
+
+/* ========== IMPROVED LEADERBOARD ANIMATIONS ========== */
+@keyframes boardRowIn {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+@keyframes spotlight {
+  0%   { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
+  40%  { box-shadow: 0 0 32px 6px rgba(251,191,36,0.35); }
+  100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
+}
+
+.big-leaderboard li {
+  animation: boardRowIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+/* stagger delays: control.html sets --i inline, fallback covers first 10 */
+.big-leaderboard li:nth-child(1)  { animation-delay: calc(var(--i, 0) * 140ms); }
+.big-leaderboard li:nth-child(2)  { animation-delay: calc(var(--i, 1) * 140ms); }
+.big-leaderboard li:nth-child(3)  { animation-delay: calc(var(--i, 2) * 140ms); }
+.big-leaderboard li:nth-child(4)  { animation-delay: calc(var(--i, 3) * 140ms); }
+.big-leaderboard li:nth-child(5)  { animation-delay: calc(var(--i, 4) * 140ms); }
+.big-leaderboard li:nth-child(6)  { animation-delay: calc(var(--i, 5) * 140ms); }
+.big-leaderboard li:nth-child(7)  { animation-delay: calc(var(--i, 6) * 140ms); }
+.big-leaderboard li:nth-child(8)  { animation-delay: calc(var(--i, 7) * 140ms); }
+.big-leaderboard li:nth-child(9)  { animation-delay: calc(var(--i, 8) * 140ms); }
+.big-leaderboard li:nth-child(10) { animation-delay: calc(var(--i, 9) * 140ms); }
+
+/* spotlight pulse on top 3 after they appear */
+.big-leaderboard li.rank-1 { animation: boardRowIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both, spotlight 1.2s ease 0.55s; }
+.big-leaderboard li.rank-2 { animation: boardRowIn 0.45s cubic-bezier(0.34,1.56,0.64,1) 0.14s both; }
+.big-leaderboard li.rank-3 { animation: boardRowIn 0.45s cubic-bezier(0.34,1.56,0.64,1) 0.28s both; }
+
+/* ========== SHARED FADE-UP KEYFRAME ========== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0);    }
 }

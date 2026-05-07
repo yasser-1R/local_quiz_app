@@ -10,8 +10,9 @@
 </header>
 
 <main class="container two-col">
+  <!-- Players Panel -->
   <div class="card">
-    <h2>Joueurs <span id="count" class="badge">{{ players|length }}</span></h2>
+    <h2>Joueurs <span id="count" class="badge">{{ players|selectattr("is_connected")|list|length }}</span></h2>
     <ul id="players" class="player-list">
       {% for p in players %}
         {% if p.is_connected %}
@@ -31,12 +32,107 @@
     {% if session.state == 'WAITING' %}
       <p class="muted">Choisissez un quiz depuis le <a href="/teacher">tableau de bord</a>.</p>
     {% elif session.state == 'LOBBY' %}
-      <button id="startBtn" class="btn primary big" onclick="startQuiz()">Demarrer le quiz ▶</button>
+      <button id="startBtn" class="btn primary big" onclick="startQuiz()">Démarrer le quiz ▶</button>
     {% else %}
-      <p class="muted">Quiz en cours — allez au <a href="/teacher/control">controle</a>.</p>
+      <p class="muted">Quiz en cours — allez au <a href="/teacher/control">contrôle</a>.</p>
     {% endif %}
   </div>
+
+  <!-- Settings Panel -->
+  {% if session.state in ('WAITING', 'LOBBY') %}
+  <div class="card">
+    <h2>⚙️ Paramètres de session</h2>
+
+    <div class="settings-group">
+      <h3>Mode de quiz</h3>
+      <p class="muted" style="font-size:14px;margin-bottom:12px;">
+        <strong>Normal</strong> : questions synchronisées pour tous.<br>
+        <strong>Aléatoire</strong> : chaque élève progresse à son rythme dans un ordre différent.
+      </p>
+      <div class="mode-radio-group">
+        <label class="mode-radio-label {% if session.mode == 'NORMAL' or not session.mode %}active{% endif %}" id="lbl-normal">
+          <input type="radio" name="quiz_mode" value="NORMAL"
+                 {% if session.mode == 'NORMAL' or not session.mode %}checked{% endif %}
+                 onchange="updateSettings()">
+          <span>🎯 Mode Normal</span>
+        </label>
+        <label class="mode-radio-label {% if session.mode == 'RANDOM' %}active{% endif %}" id="lbl-random">
+          <input type="radio" name="quiz_mode" value="RANDOM"
+                 {% if session.mode == 'RANDOM' %}checked{% endif %}
+                 onchange="updateSettings()">
+          <span>🎲 Mode Aléatoire</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-group" style="margin-top:28px;">
+      <h3>Mode de connexion des élèves</h3>
+      <p class="muted" style="font-size:14px;margin-bottom:12px;">
+        <strong>Invité</strong> : pseudo + avatar, aucun compte requis.<br>
+        <strong>Inscription</strong> : création de compte avec mot de passe.<br>
+        <strong>Connexion</strong> : compte existant requis.
+      </p>
+      <div class="mode-radio-group">
+        <label class="mode-radio-label {% if not session.connection_mode or session.connection_mode == 'GUEST' %}active{% endif %}">
+          <input type="radio" name="conn_mode" value="GUEST"
+                 {% if not session.connection_mode or session.connection_mode == 'GUEST' %}checked{% endif %}
+                 onchange="updateSettings()">
+          <span>👤 Invité</span>
+        </label>
+        <label class="mode-radio-label {% if session.connection_mode == 'SIGNUP' %}active{% endif %}">
+          <input type="radio" name="conn_mode" value="SIGNUP"
+                 {% if session.connection_mode == 'SIGNUP' %}checked{% endif %}
+                 onchange="updateSettings()">
+          <span>📝 Inscription</span>
+        </label>
+        <label class="mode-radio-label {% if session.connection_mode == 'LOGIN' %}active{% endif %}">
+          <input type="radio" name="conn_mode" value="LOGIN"
+                 {% if session.connection_mode == 'LOGIN' %}checked{% endif %}
+                 onchange="updateSettings()">
+          <span>🔑 Connexion</span>
+        </label>
+      </div>
+    </div>
+
+    <div id="settings-status" class="settings-status" style="display:none;"></div>
+  </div>
+  {% endif %}
 </main>
+
+<style>
+.settings-group h3 { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+.mode-radio-group { display: flex; flex-direction: column; gap: 10px; }
+.mode-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  color: rgba(255,255,255,0.8);
+  font-size: 16px;
+  font-weight: 600;
+}
+.mode-radio-label input[type=radio] { accent-color: #fff; width: 18px; height: 18px; flex-shrink: 0; }
+.mode-radio-label.active,
+.mode-radio-label:has(input:checked) {
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.5);
+  color: #fff;
+}
+.settings-status {
+  margin-top: 14px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.settings-status.ok { background: rgba(34,197,94,0.2); color: #86efac; }
+.settings-status.err { background: rgba(239,68,68,0.2); color: #fca5a5; }
+</style>
 
 <script>
 const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -44,18 +140,18 @@ const ws = new WebSocket(`${wsProto}://${location.host}/ws/teacher`);
 const list = document.getElementById('players');
 const count = document.getElementById('count');
 
-  ws.onmessage = (ev) => {
-    const msg = JSON.parse(ev.data);
-    if (msg.type === 'player_joined') {
-      const connected = msg.players.filter(p => p.is_connected !== false);
-      list.innerHTML = connected.map(renderPlayer).join('');
-      count.textContent = connected.length;
-    }
-  };
+ws.onmessage = (ev) => {
+  const msg = JSON.parse(ev.data);
+  if (msg.type === 'player_joined') {
+    const connected = msg.players.filter(p => p.is_connected !== false);
+    list.innerHTML = connected.map(renderPlayer).join('');
+    count.textContent = connected.length;
+  }
+};
 
 function renderPlayer(p) {
   const acc = p.avatar_accessory
-    ? `<span class="avatar-acc">${p.avatar_accessory}</span>` : '';
+    ? `<span class="avatar-acc">${escapeHtml(p.avatar_accessory)}</span>` : '';
   return `<li>
     <span class="avatar-pill" style="background: ${p.avatar_color || '#6366f1'};">
       <span class="avatar-char">${p.avatar_character || '🦊'}</span>${acc}
@@ -63,17 +159,50 @@ function renderPlayer(p) {
     ${escapeHtml(p.nickname)}
   </li>`;
 }
-function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function escapeHtml(s){return (''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+// Update all radio labels' active state on change
+document.querySelectorAll('.mode-radio-label input[type=radio]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const group = radio.closest('.mode-radio-group');
+    group.querySelectorAll('.mode-radio-label').forEach(l => l.classList.remove('active'));
+    radio.closest('.mode-radio-label').classList.add('active');
+  });
+});
+
+async function updateSettings() {
+  const mode = document.querySelector('input[name="quiz_mode"]:checked')?.value || 'NORMAL';
+  const connMode = document.querySelector('input[name="conn_mode"]:checked')?.value || 'GUEST';
+  const status = document.getElementById('settings-status');
+
+  try {
+    const res = await fetch('/api/session/settings', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({mode, connection_mode: connMode}),
+    });
+    if (res.ok) {
+      status.textContent = '✓ Paramètres sauvegardés';
+      status.className = 'settings-status ok';
+      status.style.display = 'block';
+      setTimeout(() => { status.style.display = 'none'; }, 2000);
+    } else {
+      throw new Error();
+    }
+  } catch {
+    status.textContent = '✗ Erreur lors de la sauvegarde';
+    status.className = 'settings-status err';
+    status.style.display = 'block';
+  }
+}
 
 async function startQuiz() {
-  console.log('Starting quiz...');
-  const res = await fetch(`/api/session/start`, {method: 'POST'});
+  const res = await fetch('/api/session/start', {method: 'POST'});
   if (res.ok) {
-    console.log('Quiz started, redirecting to control...');
-    window.location.href = `/teacher/control`;
+    window.location.href = '/teacher/control';
   } else {
-    console.error('Failed to start quiz');
-    alert('Impossible de demarrer');
+    alert('Impossible de démarrer');
   }
 }
 </script>

@@ -132,22 +132,13 @@ async def report_export_csv(session_id: int):
 
     writer.writerow(["Vue par question"])
     writer.writerow([
-        "Question",
-        "Texte",
-        "Taux de reussite",
-        "Bonnes reponses",
-        "Reponses",
-        "Sans reponse",
-        "Temps moyen (s)",
+        "Question", "Texte", "Taux de reussite", "Bonnes reponses",
+        "Reponses", "Sans reponse", "Temps moyen (s)",
     ])
     for q in report["questions"]:
         writer.writerow([
-            q["number"],
-            q["text"],
-            f"{q['success_rate']}%",
-            q["correct_count"],
-            q["answer_count"],
-            q["unanswered_count"],
+            q["number"], q["text"], f"{q['success_rate']}%",
+            q["correct_count"], q["answer_count"], q["unanswered_count"],
             q["avg_response_seconds"] if q["avg_response_seconds"] is not None else "",
         ])
     writer.writerow([])
@@ -157,28 +148,20 @@ async def report_export_csv(session_id: int):
     for q in report["questions"]:
         for choice in q["distribution"]:
             writer.writerow([
-                q["number"],
-                choice["choice_text"],
-                choice["count"],
-                f"{choice['percent']}%",
+                q["number"], choice["choice_text"],
+                choice["count"], f"{choice['percent']}%",
                 "oui" if choice["is_correct"] else "non",
             ])
     writer.writerow([])
 
     writer.writerow(["Vue par eleve"])
     writer.writerow([
-        "Eleve",
-        "Score total",
-        "Taux de reussite",
-        "Bonnes reponses",
-        "Temps moyen (s)",
+        "Eleve", "Score total", "Taux de reussite", "Bonnes reponses", "Temps moyen (s)",
     ])
     for student in report["students"]:
         writer.writerow([
-            student["nickname"],
-            student["total_score"],
-            f"{student['success_rate']}%",
-            student["correct_answers"],
+            student["nickname"], student["total_score"],
+            f"{student['success_rate']}%", student["correct_answers"],
             student["avg_response_seconds"] if student["avg_response_seconds"] is not None else "",
         ])
     writer.writerow([])
@@ -188,18 +171,18 @@ async def report_export_csv(session_id: int):
     for student in report["students"]:
         for row in student["questions"]:
             writer.writerow([
-                student["nickname"],
-                row["number"],
+                student["nickname"], row["number"],
                 "reussie" if row["is_correct"] else "ratee",
                 row["selected_choice"],
                 row["response_seconds"] if row["response_seconds"] is not None else "",
                 row["points"],
             ])
+
     quiz_slug = _filename_slug(report["quiz"]["title"])
     timestamp = _filename_slug(report["session"].get("ended_at") or "session")
     filename = f"rapport_{quiz_slug}_{timestamp}.csv"
     return StreamingResponse(
-        iter(["\ufeff" + output.getvalue()]),
+        iter(["﻿" + output.getvalue()]),
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
@@ -263,6 +246,7 @@ async def control(request: Request):
     if session is None or session.get("quiz_id") is None:
         return RedirectResponse(url="/teacher", status_code=303)
     quiz = quiz_service.get_quiz(session["quiz_id"])
+    players = player_service.list_players(session["id"])
     return templates.TemplateResponse(
         request,
         "teacher/control.html",
@@ -270,13 +254,13 @@ async def control(request: Request):
             "app_title": APP_TITLE,
             "session": session,
             "quiz": quiz,
+            "players": players,
         },
     )
 
 
 @router.get("/results", response_class=HTMLResponse, dependencies=[Depends(require_teacher)])
 async def results(request: Request):
-    # Show results of the most recent FINISHED session (or current if it's finished).
     session = session_service.latest_finished_session()
     if session is None:
         return RedirectResponse(url="/teacher", status_code=303)
