@@ -1,0 +1,127 @@
+{
+  "title": "Généralités sur les systèmes informatiques - Partie 1",
+  "description": "Quiz sur les définitions et concepts fondamentaux de l'informatique et des systèmes informatiques",
+  "category": "Module 1 : Généralités sur les systèmes informatiques",
+  "questions": [
+    {
+      "question_text": "Quelle est la définition correcte de l'informatique ?",
+      "choices": [
+        "La science du traitement automatique de l'information",
+        "L'étude des réseaux informatiques",
+        "La fabrication des ordinateurs",
+        "L'utilisation des logiciels bureautiques"
+      ],
+      "correct_choice_index": 0,
+      "time_limit_seconds": 20,
+      "explanation": "L'informatique est définie comme la science du traitement automatique de l'information. Elle étudie comment faire traiter de l'information par des machines."
+    },
+    {
+      "question_text": "Qu'est-ce que l'information en informatique ?",
+      "choices": [
+        "Un ensemble de données brutes sans signification",
+        "Toute donnée pouvant être traitée automatiquement par un ordinateur",
+        "Uniquement les textes écrits",
+        "Les résultats imprimés d'un programme"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "En informatique, l'information désigne toute donnée pouvant être représentée, stockée et traitée automatiquement par un ordinateur, qu'il s'agisse de texte, d'image, de son ou de tout autre type de donnée."
+    },
+    {
+      "question_text": "Quel est le schéma fonctionnel de base d'un ordinateur ?",
+      "choices": [
+        "Entrée → Traitement → Sortie",
+        "Sortie → Traitement → Entrée",
+        "Traitement → Entrée → Sortie",
+        "Entrée → Sortie → Traitement"
+      ],
+      "correct_choice_index": 0,
+      "time_limit_seconds": 20,
+      "explanation": "Le schéma fonctionnel de base d'un ordinateur suit le modèle : Entrée (saisie des données) → Traitement (par l'unité centrale) → Sortie (résultats). C'est le principe fondamental de tout système informatique."
+    },
+    {
+      "question_text": "Qu'est-ce qu'un périphérique d'entrée ?",
+      "choices": [
+        "Un composant qui affiche les résultats du traitement",
+        "Un composant qui permet d'introduire des données dans l'ordinateur",
+        "Un composant qui stocke les données de manière permanente",
+        "Un composant qui connecte l'ordinateur au réseau"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Un périphérique d'entrée est un composant qui permet d'introduire des données dans l'ordinateur. Exemples : le clavier, la souris, le scanner, le microphone."
+    },
+    {
+      "question_text": "Parmi les éléments suivants, lequel fait partie de l'Unité Centrale de Traitement (UCT) ?",
+      "choices": [
+        "L'écran",
+        "Le processeur (CPU)",
+        "L'imprimante",
+        "Le clavier"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Le processeur (CPU - Central Processing Unit) est l'élément principal de l'Unité Centrale de Traitement. Il effectue les calculs et coordonne toutes les opérations du système informatique."
+    },
+    {
+      "question_text": "Qu'est-ce qu'un système informatique ?",
+      "choices": [
+        "Uniquement l'ordinateur et ses composants matériels",
+        "L'ensemble formé par le matériel, les logiciels et les utilisateurs",
+        "Uniquement les logiciels installés sur un ordinateur",
+        "L'ensemble des réseaux connectés à Internet"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Un système informatique est l'ensemble cohérent formé par le matériel (hardware), les logiciels (software) et les utilisateurs (humanware), travaillant ensemble pour traiter l'information."
+    },
+    {
+      "question_text": "Lequel des domaines suivants est un exemple d'application de l'informatique ?",
+      "choices": [
+        "La menuiserie traditionnelle",
+        "La gestion hospitalière",
+        "La taille de pierres",
+        "La poterie artisanale"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "La gestion hospitalière est un exemple d'application de l'informatique. L'informatique est utilisée dans de nombreux domaines : santé, éducation, commerce, industrie, banque, etc."
+    },
+    {
+      "question_text": "Quelle est la différence entre un logiciel de base et un logiciel d'application ?",
+      "choices": [
+        "Il n'y a aucune différence entre les deux",
+        "Le logiciel de base gère les ressources matérielles tandis que le logiciel d'application répond à des besoins spécifiques",
+        "Le logiciel de base est gratuit et le logiciel d'application est payant",
+        "Le logiciel de base est pour les débutants et le logiciel d'application pour les experts"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Le logiciel de base (ex : système d'exploitation) gère les ressources matérielles de l'ordinateur. Le logiciel d'application répond à des besoins spécifiques des utilisateurs (ex : traitement de texte, tableur)."
+    },
+    {
+      "question_text": "Parmi les éléments suivants, lequel est un périphérique de sortie ?",
+      "choices": [
+        "Le clavier",
+        "La souris",
+        "L'imprimante",
+        "Le scanner"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "L'imprimante est un périphérique de sortie car elle permet d'obtenir un résultat (document imprimé) à partir de données traitées par l'ordinateur. L'écran est aussi un périphérique de sortie."
+    },
+    {
+      "question_text": "Qu'est-ce que le traitement de l'information ?",
+      "choices": [
+        "L'action de sauvegarder des fichiers sur le disque dur",
+        "L'ensemble des opérations effectuées sur des données pour obtenir un résultat",
+        "L'affichage de données à l'écran",
+        "La transmission de données via Internet"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Le traitement de l'information désigne l'ensemble des opérations (calculs, tri, comparaison, transformation) effectuées sur des données brutes pour produire un résultat exploitable."
+    }
+  ]
+}

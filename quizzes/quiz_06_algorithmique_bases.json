@@ -1,0 +1,127 @@
+{
+  "title": "Algorithmique - Notions de base",
+  "description": "Quiz sur les notions fondamentales de l'algorithmique : variables, constantes, types et instructions de base",
+  "category": "Module 3 : Algorithmique et programmation",
+  "questions": [
+    {
+      "question_text": "Qu'est-ce qu'un algorithme ?",
+      "choices": [
+        "Un programme informatique écrit en langage C",
+        "Une suite finie et ordonnée d'instructions permettant de résoudre un problème",
+        "Un type de virus informatique",
+        "Un logiciel de calcul mathématique"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Un algorithme est une suite finie, ordonnée et non ambiguë d'instructions permettant de résoudre un problème ou d'accomplir une tâche. C'est la description de la solution avant sa programmation."
+    },
+    {
+      "question_text": "Qu'est-ce qu'une variable en algorithmique ?",
+      "choices": [
+        "Une valeur fixe qui ne change pas pendant l'exécution",
+        "Un espace mémoire nommé qui peut stocker une valeur pouvant changer lors de l'exécution",
+        "Une instruction de répétition",
+        "Une condition logique dans un algorithme"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Une variable est un espace mémoire désigné par un nom (identificateur) qui peut contenir une valeur susceptible de changer au cours de l'exécution de l'algorithme."
+    },
+    {
+      "question_text": "Qu'est-ce qu'une constante en algorithmique ?",
+      "choices": [
+        "Une variable dont la valeur change fréquemment",
+        "Une valeur fixe qui ne change pas pendant l'exécution de l'algorithme",
+        "Une boucle qui s'exécute un nombre constant de fois",
+        "Un type de données réservé aux nombres entiers"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Une constante est une valeur nommée qui reste fixe et immuable pendant toute l'exécution de l'algorithme. Exemple : PI = 3.14159. Contrairement à une variable, sa valeur ne peut pas être modifiée."
+    },
+    {
+      "question_text": "Quels sont les types de données de base en algorithmique ?",
+      "choices": [
+        "Rouge, vert et bleu",
+        "Entier, réel, booléen et caractère/chaîne",
+        "Grand, moyen et petit",
+        "Entrée, traitement et sortie"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Les types de données de base en algorithmique sont : Entier (nombres entiers), Réel (nombres décimaux), Booléen (Vrai/Faux), et Caractère ou Chaîne de caractères (texte)."
+    },
+    {
+      "question_text": "Que fait l'instruction d'affectation en algorithmique ?",
+      "choices": [
+        "Elle affiche une valeur à l'écran",
+        "Elle lit une valeur saisie par l'utilisateur",
+        "Elle attribue une valeur à une variable",
+        "Elle termine l'exécution de l'algorithme"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "L'instruction d'affectation attribue une valeur à une variable. En pseudo-code, on l'écrit souvent avec la flèche ← ou le signe :=. Exemple : age ← 17 attribue la valeur 17 à la variable age."
+    },
+    {
+      "question_text": "Que fait l'instruction LIRE (ou Saisir) dans un algorithme ?",
+      "choices": [
+        "Elle affiche un résultat à l'écran",
+        "Elle récupère une valeur saisie par l'utilisateur et la stocke dans une variable",
+        "Elle lit le contenu d'un fichier",
+        "Elle calcule une expression mathématique"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "L'instruction LIRE (ou Saisir) permet de récupérer une valeur entrée par l'utilisateur via le clavier et de la stocker dans une variable. Exemple : LIRE(age) attend que l'utilisateur tape une valeur."
+    },
+    {
+      "question_text": "Que fait l'instruction ÉCRIRE (ou Afficher) dans un algorithme ?",
+      "choices": [
+        "Elle enregistre des données dans un fichier",
+        "Elle affiche un message ou la valeur d'une variable à l'écran",
+        "Elle affecte une valeur à une variable",
+        "Elle répète un bloc d'instructions"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "L'instruction ÉCRIRE (ou Afficher) permet d'afficher un message ou la valeur d'une variable à l'écran (sortie). Exemple : ÉCRIRE('Bonjour') affiche le texte Bonjour à l'écran."
+    },
+    {
+      "question_text": "Quel est le résultat de l'algorithme suivant ?\nX ← 5\nX ← X + 3\nÉCRIRE(X)",
+      "choices": [
+        "5",
+        "3",
+        "8",
+        "X + 3"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "D'abord X reçoit la valeur 5. Ensuite X reçoit X + 3 = 5 + 3 = 8. Enfin on affiche la valeur de X qui est 8. L'affectation X ← X + 3 calcule d'abord le membre droit puis affecte le résultat à X."
+    },
+    {
+      "question_text": "Comment choisir un bon identificateur (nom) pour une variable ?",
+      "choices": [
+        "Utiliser uniquement des chiffres",
+        "Choisir un nom court d'une seule lettre systématiquement",
+        "Choisir un nom significatif qui décrit le rôle de la variable",
+        "Utiliser des espaces et des caractères spéciaux"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "Un bon identificateur doit être significatif et décrire clairement le rôle de la variable. Par exemple, utiliser 'age' plutôt que 'a', ou 'prixTotal' plutôt que 'pt'. Cela rend l'algorithme plus lisible."
+    },
+    {
+      "question_text": "Quel est le type de la variable 'estMajeur' si elle peut prendre uniquement les valeurs VRAI ou FAUX ?",
+      "choices": [
+        "Entier",
+        "Réel",
+        "Caractère",
+        "Booléen"
+      ],
+      "correct_choice_index": 3,
+      "time_limit_seconds": 20,
+      "explanation": "Le type Booléen (ou Logique) est le type d'une variable ne pouvant prendre que deux valeurs : VRAI (True) ou FAUX (False). Il est utilisé pour représenter des conditions logiques."
+    }
+  ]
+}

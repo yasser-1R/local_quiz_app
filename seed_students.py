@@ -21,14 +21,14 @@ from app.services.student_service import create_student, get_student_by_pseudo
 BOT_PASSWORD = "bot_pass1234"
 
 PSEUDOS = [
-    "Bot_Yassin", "Bot_Mohammed", "Bot_Fatima", "Bot_Omar", "Bot_Sara",
-    "Bot_Ahmed", "Bot_Layla", "Bot_Karim", "Bot_Nour", "Bot_Hassan",
-    "Bot_Amina", "Bot_Ali", "Bot_Huda", "Bot_Rachid", "Bot_Adam",
-    "Bot_Aya", "Bot_Youssef", "Bot_Mariam", "Bot_Tarek", "Bot_Dina",
-    "Bot_Khalid", "Bot_Zainab", "Bot_Ibrahim", "Bot_Salma", "Bot_Abdullah",
-    "Bot_Rania", "Bot_Said", "Bot_Nadia", "Bot_Mustafa", "Bot_Lina",
-    "Bot_Walid", "Bot_Dalia", "Bot_Amir", "Bot_Jana", "Bot_Hossam",
-    "Bot_Malak", "Bot_Ziad", "Bot_Tala", "Bot_Majid", "Bot_Rim",
+    "Yassin23", "Mohammed17", "Fatima45", "Omar12", "Sara34",
+    "Ahmed28", "Layla41", "Karim19", "Nour52", "Hassan27",
+    "Amina33", "Ali18", "Huda46", "Rachid21", "Adam39",
+    "Aya14", "Youssef55", "Mariam26", "Tarek31", "Dina48",
+    "Khalid22", "Zainab37", "Ibrahim29", "Salma44", "Abdullah16",
+    "Rania53", "Said25", "Nadia38", "Mustafa11", "Lina47",
+    "Walid30", "Dalia42", "Amir20", "Jana49", "Hossam13",
+    "Malak36", "Ziad24", "Tala51", "Majid15", "Rim40",
 ]
 
 CHARACTERS = ["🦊","🐻","🐼","🐨","🐯","🦁","🐸","🐵","🦄","🐙",

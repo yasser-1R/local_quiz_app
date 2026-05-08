@@ -1,0 +1,127 @@
+{
+  "title": "Révision générale - Les 4 modules",
+  "description": "Quiz de révision couvrant les concepts essentiels des quatre modules du programme d'informatique des troncs communs",
+  "category": "Révision générale - Tous les modules",
+  "questions": [
+    {
+      "question_text": "Quels sont les quatre modules du programme d'informatique pour les troncs communs au Maroc ?",
+      "choices": [
+        "Mathématiques, Physique, Chimie et Biologie",
+        "Généralités sur les systèmes informatiques, Logiciels, Algorithmique et programmation, Réseaux et Internet",
+        "Windows, Word, Excel et PowerPoint",
+        "Matériel, Logiciel, Réseau et Sécurité"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Les quatre modules sont : Module 1 (Généralités sur les systèmes informatiques), Module 2 (Les logiciels), Module 3 (Algorithmique et programmation) et Module 4 (Réseaux et Internet)."
+    },
+    {
+      "question_text": "Parmi les éléments suivants, lequel est un logiciel de base ?",
+      "choices": [
+        "Microsoft Word",
+        "Adobe Photoshop",
+        "Le système d'exploitation Windows",
+        "Mozilla Firefox"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "Le système d'exploitation (Windows, Linux, macOS...) est un logiciel de base. Il gère les ressources matérielles et sert de plateforme pour les logiciels d'application comme Word, Photoshop ou Firefox."
+    },
+    {
+      "question_text": "Dans un algorithme, quelle instruction permet de demander une valeur à l'utilisateur ?",
+      "choices": [
+        "ÉCRIRE",
+        "LIRE",
+        "AFFICHER",
+        "CALCULER"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "L'instruction LIRE (ou Saisir) permet de demander et de récupérer une valeur saisie par l'utilisateur. L'instruction ÉCRIRE (ou Afficher) permet d'afficher un résultat."
+    },
+    {
+      "question_text": "Quel type de réseau couvre une zone géographique comme un bâtiment ou une école ?",
+      "choices": [
+        "WAN (Wide Area Network)",
+        "MAN (Metropolitan Area Network)",
+        "LAN (Local Area Network)",
+        "Internet"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "Le LAN (Local Area Network) est un réseau local couvrant une zone géographique restreinte comme un bâtiment, une école ou une entreprise. C'est le type de réseau le plus courant dans les établissements scolaires."
+    },
+    {
+      "question_text": "Quelle formule Excel calcule automatiquement la somme des cellules C1 à C8 ?",
+      "choices": [
+        "=TOTAL(C1:C8)",
+        "=SOMME(C1:C8)",
+        "=ADDITION(C1,C8)",
+        "=C1+C2+C3+C4+C5+C6+C7+C8 uniquement"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "=SOMME(C1:C8) est la formule correcte pour calculer la somme de toutes les cellules de C1 à C8. C'est plus efficace qu'additionner cellule par cellule, surtout pour de grandes plages."
+    },
+    {
+      "question_text": "Quel est le rôle du processeur (CPU) dans un ordinateur ?",
+      "choices": [
+        "Stocker les données de façon permanente",
+        "Afficher les images à l'écran",
+        "Exécuter les instructions des programmes et effectuer les calculs",
+        "Connecter l'ordinateur au réseau Internet"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "Le processeur (CPU) est le cerveau de l'ordinateur. Il exécute les instructions des programmes, effectue les calculs arithmétiques et logiques, et coordonne le fonctionnement de tous les composants."
+    },
+    {
+      "question_text": "Qu'est-ce que l'adresse IP d'un ordinateur sur un réseau ?",
+      "choices": [
+        "Le nom du fabricant de l'ordinateur",
+        "Un identifiant numérique unique attribué à chaque machine sur un réseau",
+        "Le mot de passe d'accès au réseau",
+        "La vitesse de connexion en Mbps"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "L'adresse IP (Internet Protocol) est un identifiant numérique unique attribué à chaque machine sur un réseau. Elle permet d'identifier et de localiser chaque appareil pour acheminer correctement les données."
+    },
+    {
+      "question_text": "Quelle structure algorithmique est utilisée pour exécuter des instructions uniquement quand une condition est vérifiée ?",
+      "choices": [
+        "La structure séquentielle",
+        "La structure sélective (SI...ALORS)",
+        "L'instruction ÉCRIRE",
+        "L'instruction LIRE"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "La structure sélective (SI...ALORS...FIN SI) permet d'exécuter des instructions uniquement lorsqu'une condition spécifiée est vérifiée (vraie). Si la condition est fausse, les instructions sont ignorées ou une alternative est exécutée."
+    },
+    {
+      "question_text": "Quel service Internet permet l'échange instantané de messages texte en temps réel ?",
+      "choices": [
+        "Le courrier électronique (email)",
+        "Le FTP (transfert de fichiers)",
+        "Le chat (messagerie instantanée)",
+        "Le DNS (système de noms de domaine)"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "Le chat (messagerie instantanée ou clavardage) est un service Internet permettant l'échange de messages en temps réel (communication synchrone). L'email est asynchrone (les correspondants ne sont pas forcément connectés en même temps)."
+    },
+    {
+      "question_text": "Selon le programme marocain, quelle est l'une des finalités de l'enseignement de l'informatique aux troncs communs ?",
+      "choices": [
+        "Former des programmeurs professionnels dès le lycée",
+        "Instaurer une culture informatique de base et initier aux outils numériques",
+        "Remplacer tous les autres cours par l'informatique",
+        "Préparer uniquement les élèves aux filières technologiques"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Selon le programme officiel, l'enseignement de l'informatique aux troncs communs vise notamment à instaurer une culture informatique de base, à apporter des connaissances sur les systèmes informatiques et à initier aux réseaux et à la programmation."
+    }
+  ]
+}

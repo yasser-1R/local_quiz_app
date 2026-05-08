@@ -1,0 +1,127 @@
+{
+  "title": "Structures de contrôle et programmation",
+  "description": "Quiz sur les structures séquentielles, sélectives et les langages de programmation",
+  "category": "Module 3 : Algorithmique et programmation",
+  "questions": [
+    {
+      "question_text": "Qu'est-ce qu'une structure séquentielle en algorithmique ?",
+      "choices": [
+        "Une structure qui répète des instructions plusieurs fois",
+        "Une structure qui exécute les instructions les unes après les autres dans l'ordre",
+        "Une structure qui choisit entre plusieurs alternatives",
+        "Une structure qui appelle d'autres algorithmes"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "La structure séquentielle est la structure de base de tout algorithme : les instructions sont exécutées les unes après les autres, dans l'ordre où elles sont écrites, de haut en bas."
+    },
+    {
+      "question_text": "Quelle est la syntaxe générale de la structure sélective simple (Si...Alors) ?",
+      "choices": [
+        "POUR i DE 1 À n FAIRE ... FIN POUR",
+        "TANT QUE condition FAIRE ... FIN TANT QUE",
+        "SI condition ALORS instructions FIN SI",
+        "REPETER instructions JUSQU'A condition"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "La structure sélective simple utilise SI...ALORS...FIN SI. Elle exécute les instructions uniquement si la condition est vraie. Si la condition est fausse, les instructions sont ignorées."
+    },
+    {
+      "question_text": "Quelle structure algorithmique permet d'exécuter un bloc d'instructions si une condition est vraie, et un autre bloc si elle est fausse ?",
+      "choices": [
+        "La structure séquentielle",
+        "La boucle POUR",
+        "La structure sélective avec SI...ALORS...SINON",
+        "La procédure"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "La structure SI...ALORS...SINON...FIN SI permet d'exécuter un bloc A si la condition est vraie, ou un bloc B si la condition est fausse. C'est la structure de sélection avec deux alternatives."
+    },
+    {
+      "question_text": "Que représente l'opérateur ET logique dans une condition ?",
+      "choices": [
+        "La condition est vraie si au moins une des deux conditions est vraie",
+        "La condition est vraie uniquement si les deux conditions sont toutes les deux vraies",
+        "La condition est vraie si les deux conditions sont fausses",
+        "La condition inverse la valeur logique"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "L'opérateur ET (AND) logique donne un résultat VRAI uniquement si toutes les conditions qu'il relie sont simultanément vraies. Si l'une est fausse, le résultat global est FAUX."
+    },
+    {
+      "question_text": "Que représente l'opérateur OU logique dans une condition ?",
+      "choices": [
+        "La condition est vraie uniquement si les deux conditions sont vraies",
+        "La condition est vraie si au moins une des deux conditions est vraie",
+        "La condition est toujours fausse",
+        "La condition inverse la valeur"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "L'opérateur OU (OR) logique donne un résultat VRAI si au moins l'une des conditions qu'il relie est vraie. Le résultat n'est FAUX que si toutes les conditions sont simultanément fausses."
+    },
+    {
+      "question_text": "Parmi les représentations suivantes, laquelle est utilisée pour représenter graphiquement un algorithme ?",
+      "choices": [
+        "Un diagramme de Gantt",
+        "Un organigramme (logigramme)",
+        "Un tableau croisé dynamique",
+        "Un schéma de réseau"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "L'organigramme (ou logigramme) est une représentation graphique standardisée d'un algorithme utilisant des symboles géométriques : rectangles pour les traitements, losanges pour les décisions, etc."
+    },
+    {
+      "question_text": "Qu'est-ce qu'un langage de programmation de haut niveau ?",
+      "choices": [
+        "Un langage compris directement par le processeur",
+        "Un langage proche de la langue naturelle humaine, plus facile à comprendre et à utiliser",
+        "Un langage utilisé uniquement par les experts en électronique",
+        "Un langage permettant uniquement de faire des calculs mathématiques"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Un langage de haut niveau est proche du langage naturel humain, ce qui le rend plus facile à apprendre et à utiliser. Exemples : Pascal, Python, C, Java. Ils nécessitent une traduction en langage machine."
+    },
+    {
+      "question_text": "Qu'est-ce que la transcription d'un algorithme ?",
+      "choices": [
+        "Traduire un algorithme d'une langue humaine à une autre",
+        "Convertir un algorithme écrit en pseudo-code en un programme dans un langage de programmation",
+        "Corriger les erreurs dans un algorithme",
+        "Dessiner l'organigramme d'un algorithme"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "La transcription d'un algorithme consiste à le convertir (le coder) depuis le pseudo-code ou l'organigramme vers un langage de programmation réel (Pascal, Python, C...) pour pouvoir l'exécuter sur un ordinateur."
+    },
+    {
+      "question_text": "Lequel des langages suivants est recommandé dans le programme du tronc commun marocain pour l'apprentissage de la programmation ?",
+      "choices": [
+        "Java",
+        "Pascal",
+        "JavaScript",
+        "Python"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Le programme officiel marocain pour les troncs communs recommande le langage Pascal, car il est structuré et proche de la pensée algorithmique, ce qui facilite le passage de l'algorithme au programme."
+    },
+    {
+      "question_text": "Qu'est-ce qu'une structure sélective imbriquée ?",
+      "choices": [
+        "Une structure SI...ALORS placée à l'intérieur d'une autre structure SI...ALORS",
+        "Une boucle placée dans une autre boucle",
+        "Deux variables ayant le même nom",
+        "Une séquence d'instructions répétée deux fois"
+      ],
+      "correct_choice_index": 0,
+      "time_limit_seconds": 20,
+      "explanation": "Une structure sélective imbriquée est une structure SI...ALORS placée à l'intérieur d'une autre structure SI...ALORS. Elle permet de gérer des conditions à plusieurs niveaux de complexité."
+    }
+  ]
+}

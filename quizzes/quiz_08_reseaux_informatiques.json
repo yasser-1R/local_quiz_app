@@ -1,0 +1,127 @@
+{
+  "title": "Réseaux informatiques",
+  "description": "Quiz sur les notions de réseau informatique, les typologies et les avantages des réseaux",
+  "category": "Module 4 : Réseaux et Internet",
+  "questions": [
+    {
+      "question_text": "Qu'est-ce qu'un réseau informatique ?",
+      "choices": [
+        "Un ensemble d'ordinateurs non connectés travaillant chacun de façon isolée",
+        "Un ensemble d'ordinateurs et périphériques reliés entre eux pour partager des ressources et communiquer",
+        "Un logiciel de sécurité contre les virus",
+        "Un type de disque dur externe"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Un réseau informatique est un ensemble d'ordinateurs et de périphériques interconnectés permettant le partage de ressources (fichiers, imprimantes...) et la communication entre utilisateurs."
+    },
+    {
+      "question_text": "Que signifie l'acronyme LAN ?",
+      "choices": [
+        "Large Area Network (Réseau de Grande Superficie)",
+        "Local Area Network (Réseau Local)",
+        "Light Access Network (Réseau d'Accès Léger)",
+        "Linux Advanced Network (Réseau Linux Avancé)"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "LAN signifie Local Area Network, soit Réseau Local en français. C'est un réseau couvrant une zone géographique limitée comme un bâtiment, une école ou une entreprise."
+    },
+    {
+      "question_text": "Que signifie l'acronyme WAN ?",
+      "choices": [
+        "Wireless Area Network (Réseau sans fil)",
+        "Wide Area Network (Réseau Étendu)",
+        "Web Application Node (Nœud d'Application Web)",
+        "Wired Access Network (Réseau d'Accès Câblé)"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "WAN signifie Wide Area Network, soit Réseau Étendu. Il couvre de grandes distances géographiques (pays, continents). Internet est l'exemple le plus connu de WAN."
+    },
+    {
+      "question_text": "Quelle est la topologie en étoile dans un réseau informatique ?",
+      "choices": [
+        "Tous les ordinateurs sont reliés en cercle, chacun connecté aux deux voisins",
+        "Tous les ordinateurs sont reliés à un équipement central (switch ou hub)",
+        "Tous les ordinateurs partagent un même câble central",
+        "Chaque ordinateur est connecté directement à tous les autres"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Dans la topologie en étoile, chaque ordinateur est connecté individuellement à un équipement central (switch, hub ou routeur). Si un câble tombe en panne, seul l'ordinateur concerné est affecté."
+    },
+    {
+      "question_text": "Quelle est la topologie en bus dans un réseau informatique ?",
+      "choices": [
+        "Tous les ordinateurs sont reliés à un équipement central",
+        "Tous les ordinateurs partagent un seul câble commun appelé bus",
+        "Les ordinateurs forment un anneau fermé",
+        "Chaque ordinateur est relié à tous les autres"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Dans la topologie en bus, tous les ordinateurs sont connectés à un câble central commun (le bus). Si ce câble est endommagé, l'ensemble du réseau tombe en panne."
+    },
+    {
+      "question_text": "Quel est l'un des principaux avantages d'un réseau informatique ?",
+      "choices": [
+        "Il augmente automatiquement la vitesse du processeur",
+        "Il permet le partage de ressources (fichiers, imprimantes, connexion Internet)",
+        "Il empêche les virus d'infecter les ordinateurs",
+        "Il double la capacité de stockage des disques durs"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "L'un des principaux avantages d'un réseau est le partage de ressources : plusieurs utilisateurs peuvent partager une même imprimante, des fichiers communs ou une connexion Internet."
+    },
+    {
+      "question_text": "Qu'est-ce qu'un protocole réseau ?",
+      "choices": [
+        "Un câble spécial pour relier les ordinateurs",
+        "Un ensemble de règles et standards définissant comment les données sont échangées sur un réseau",
+        "Un logiciel antivirus pour les réseaux",
+        "Un type de prise réseau physique"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Un protocole réseau est un ensemble de règles et de conventions qui définissent comment les données sont formatées, transmises et reçues sur un réseau. Exemples : TCP/IP, HTTP, FTP, SMTP."
+    },
+    {
+      "question_text": "Que signifie l'acronyme MAN dans le domaine des réseaux ?",
+      "choices": [
+        "Machine Access Node",
+        "Metropolitan Area Network (Réseau Métropolitain)",
+        "Managed Advanced Network",
+        "Mobile Area Network"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "MAN signifie Metropolitan Area Network, soit Réseau Métropolitain. Il couvre une ville ou une agglomération, avec une portée intermédiaire entre le LAN (local) et le WAN (étendu)."
+    },
+    {
+      "question_text": "Quelle est la topologie en anneau dans un réseau informatique ?",
+      "choices": [
+        "Tous les ordinateurs sont reliés à un équipement central",
+        "Tous les ordinateurs partagent un câble commun",
+        "Les ordinateurs sont reliés en cercle fermé, les données circulant dans un sens",
+        "Chaque ordinateur est connecté à tous les autres"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "Dans la topologie en anneau, les ordinateurs sont reliés en cercle fermé. Les données circulent dans un seul sens, passant de machine en machine jusqu'à atteindre la destination."
+    },
+    {
+      "question_text": "Qu'est-ce qu'un switch (commutateur) dans un réseau local ?",
+      "choices": [
+        "Un logiciel de gestion des fichiers réseau",
+        "Un équipement qui connecte plusieurs ordinateurs et dirige les données vers le bon destinataire",
+        "Un type de câble réseau",
+        "Un ordinateur serveur dédié au stockage"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Un switch (commutateur) est un équipement réseau qui connecte plusieurs ordinateurs dans un réseau local. Il dirige intelligemment les données uniquement vers le destinataire concerné, améliorant les performances."
+    }
+  ]
+}

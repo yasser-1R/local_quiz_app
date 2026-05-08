@@ -1,0 +1,127 @@
+{
+  "title": "Tableur et feuilles de calcul",
+  "description": "Quiz sur les fonctionnalités d'un tableur, les formules, l'adressage et la création de graphiques",
+  "category": "Module 2 : Les logiciels",
+  "questions": [
+    {
+      "question_text": "Qu'est-ce qu'un tableur ?",
+      "choices": [
+        "Un logiciel de dessin vectoriel",
+        "Un logiciel de traitement de texte avancé",
+        "Un logiciel permettant d'effectuer des calculs et d'organiser des données dans des tableaux",
+        "Un logiciel de navigation sur Internet"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "Un tableur est un logiciel permettant de créer des feuilles de calcul, d'organiser des données dans des tableaux, d'effectuer des calculs automatiques via des formules, et de créer des graphiques."
+    },
+    {
+      "question_text": "Comment appelle-t-on l'intersection d'une ligne et d'une colonne dans un tableur ?",
+      "choices": [
+        "Un champ",
+        "Une cellule",
+        "Un bloc",
+        "Une zone"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "L'intersection d'une ligne et d'une colonne dans un tableur s'appelle une cellule. Chaque cellule est identifiée par une adresse composée d'une lettre (colonne) et d'un numéro (ligne), ex : A1, B3, C5."
+    },
+    {
+      "question_text": "Comment débute obligatoirement une formule dans un tableur comme Excel ?",
+      "choices": [
+        "Par le symbole #",
+        "Par le symbole =",
+        "Par le symbole @",
+        "Par le symbole $"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Dans un tableur (Excel, LibreOffice Calc...), toute formule doit obligatoirement commencer par le signe = (égal). Par exemple : =A1+B1 ou =SOMME(A1:A10)."
+    },
+    {
+      "question_text": "Quelle formule permet de calculer la somme des cellules A1 à A10 dans Excel ?",
+      "choices": [
+        "=TOTAL(A1:A10)",
+        "=ADDITION(A1,A10)",
+        "=SOMME(A1:A10)",
+        "=CALCUL(A1-A10)"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "La fonction SOMME() permet de calculer la somme d'une plage de cellules. =SOMME(A1:A10) additionne toutes les valeurs des cellules de A1 jusqu'à A10 inclus."
+    },
+    {
+      "question_text": "Qu'est-ce que l'adressage absolu dans un tableur ?",
+      "choices": [
+        "Une adresse qui change lorsqu'on copie la formule",
+        "Une adresse fixe qui ne change pas lorsqu'on copie la formule, indiquée par le symbole $",
+        "L'adresse IP du serveur du tableur",
+        "Le nom complet du fichier tableur"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "L'adressage absolu utilise le symbole $ pour figer une référence de cellule. Ex : $A$1 reste toujours la cellule A1 même si la formule est copiée ailleurs. L'adressage relatif (A1) s'adapte lors de la copie."
+    },
+    {
+      "question_text": "Que signifie la plage de cellules B2:D5 dans un tableur ?",
+      "choices": [
+        "Uniquement les cellules B2 et D5",
+        "Toutes les cellules du rectangle allant de B2 à D5",
+        "La soustraction de la cellule D5 par la cellule B2",
+        "Une erreur de syntaxe"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "La notation B2:D5 désigne une plage rectangulaire de cellules allant de la cellule B2 (coin supérieur gauche) à la cellule D5 (coin inférieur droit), incluant toutes les cellules de ce rectangle."
+    },
+    {
+      "question_text": "Quelle fonction Excel permet de calculer la moyenne d'une plage de cellules ?",
+      "choices": [
+        "=MOYENNE()",
+        "=MOY()",
+        "=AVERAGE()",
+        "=CALCULMOY()"
+      ],
+      "correct_choice_index": 0,
+      "time_limit_seconds": 20,
+      "explanation": "La fonction =MOYENNE() permet de calculer la moyenne arithmétique d'une plage de cellules. Exemple : =MOYENNE(B1:B10) calcule la moyenne des valeurs de B1 à B10."
+    },
+    {
+      "question_text": "À quoi servent les graphiques dans un tableur ?",
+      "choices": [
+        "À améliorer les performances de calcul",
+        "À représenter visuellement des données numériques pour faciliter leur analyse et comparaison",
+        "À corriger les erreurs dans les formules",
+        "À imprimer les données en couleur"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Les graphiques permettent de représenter visuellement des données numériques (histogrammes, courbes, camemberts...). Ils facilitent l'analyse, la comparaison et la compréhension des données statistiques."
+    },
+    {
+      "question_text": "Que se passe-t-il lorsqu'une cellule affiche #DIV/0! dans Excel ?",
+      "choices": [
+        "La cellule contient trop de données",
+        "Il y a une erreur de division par zéro dans la formule",
+        "La colonne est trop étroite pour afficher le résultat",
+        "La formule fait référence à une cellule inexistante"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "#DIV/0! est un message d'erreur qui apparaît lorsqu'une formule tente de diviser un nombre par zéro ou par une cellule vide. Il faut corriger la formule ou vérifier les données source."
+    },
+    {
+      "question_text": "Quelle est la différence entre une feuille de calcul et un classeur dans Excel ?",
+      "choices": [
+        "Il n'y a aucune différence",
+        "Un classeur est un fichier Excel contenant une ou plusieurs feuilles de calcul",
+        "Une feuille de calcul contient plusieurs classeurs",
+        "Un classeur est un type de graphique spécial"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Un classeur Excel est le fichier (document) qui contient une ou plusieurs feuilles de calcul (onglets). Chaque feuille est un tableau de cellules organisées en lignes et colonnes."
+    }
+  ]
+}

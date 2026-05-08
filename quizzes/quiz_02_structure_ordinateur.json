@@ -1,0 +1,127 @@
+{
+  "title": "Structure et composants d'un ordinateur",
+  "description": "Quiz sur la structure interne d'un ordinateur, ses composants matériels et ses types de logiciels",
+  "category": "Module 1 : Généralités sur les systèmes informatiques",
+  "questions": [
+    {
+      "question_text": "Quelle est la fonction principale de la mémoire RAM ?",
+      "choices": [
+        "Stocker les données de façon permanente",
+        "Stocker temporairement les données en cours d'utilisation",
+        "Afficher les images à l'écran",
+        "Connecter l'ordinateur à Internet"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "La mémoire RAM (Random Access Memory) est une mémoire vive qui stocke temporairement les données et programmes en cours d'utilisation. Son contenu est perdu à l'extinction de l'ordinateur."
+    },
+    {
+      "question_text": "Qu'est-ce que le disque dur dans un ordinateur ?",
+      "choices": [
+        "Un périphérique d'entrée",
+        "Un support de stockage permanent des données",
+        "Un composant d'affichage",
+        "Une unité de calcul"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Le disque dur est un support de stockage permanent (mémoire de masse) qui conserve les données même après l'extinction de l'ordinateur. Il stocke le système d'exploitation, les logiciels et les fichiers."
+    },
+    {
+      "question_text": "Parmi les logiciels suivants, lequel est un système d'exploitation ?",
+      "choices": [
+        "Microsoft Word",
+        "Mozilla Firefox",
+        "Windows 10",
+        "Adobe Photoshop"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "Windows 10 est un système d'exploitation, c'est-à-dire un logiciel de base qui gère les ressources matérielles de l'ordinateur et sert d'interface entre l'utilisateur et la machine."
+    },
+    {
+      "question_text": "Qu'est-ce que la carte mère d'un ordinateur ?",
+      "choices": [
+        "Un logiciel de gestion des fichiers",
+        "Le circuit principal qui relie tous les composants de l'ordinateur",
+        "Un périphérique de stockage externe",
+        "Un type d'écran d'ordinateur"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "La carte mère est le circuit imprimé principal de l'ordinateur. Elle relie et permet la communication entre tous les composants : processeur, mémoire, disques, cartes d'extension, etc."
+    },
+    {
+      "question_text": "Lequel de ces éléments est un périphérique d'entrée/sortie (mixte) ?",
+      "choices": [
+        "L'imprimante",
+        "Le clavier",
+        "L'écran tactile",
+        "Le microphone"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "L'écran tactile est à la fois un périphérique de sortie (affichage) et un périphérique d'entrée (saisie tactile). C'est donc un périphérique mixte d'entrée/sortie."
+    },
+    {
+      "question_text": "Parmi les logiciels suivants, lequel est un logiciel d'application ?",
+      "choices": [
+        "Linux",
+        "Windows XP",
+        "macOS",
+        "Microsoft Excel"
+      ],
+      "correct_choice_index": 3,
+      "time_limit_seconds": 20,
+      "explanation": "Microsoft Excel est un logiciel d'application (tableur) qui répond à un besoin spécifique de l'utilisateur. Linux, Windows XP et macOS sont des systèmes d'exploitation (logiciels de base)."
+    },
+    {
+      "question_text": "Quelle est l'unité de mesure de la capacité de stockage ?",
+      "choices": [
+        "Le Hertz (Hz)",
+        "Le Watt (W)",
+        "L'Octet (Byte)",
+        "Le Volt (V)"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "L'Octet (Byte) est l'unité de mesure de la capacité de stockage et de la mémoire. On utilise aussi le Kilo-octet (Ko), le Méga-octet (Mo), le Giga-octet (Go), le Téra-octet (To)."
+    },
+    {
+      "question_text": "Que signifie l'acronyme CPU ?",
+      "choices": [
+        "Central Processing Unit (Unité Centrale de Traitement)",
+        "Computer Personal Unit (Unité Personnelle d'Ordinateur)",
+        "Central Power Unit (Unité Centrale d'Alimentation)",
+        "Computing Process Utility (Utilitaire de Processus de Calcul)"
+      ],
+      "correct_choice_index": 0,
+      "time_limit_seconds": 20,
+      "explanation": "CPU signifie Central Processing Unit, soit Unité Centrale de Traitement en français. C'est le composant principal de l'ordinateur qui exécute les instructions des programmes."
+    },
+    {
+      "question_text": "Quelle est la différence entre la mémoire ROM et la mémoire RAM ?",
+      "choices": [
+        "La ROM est plus rapide que la RAM",
+        "La ROM est permanente et non modifiable, la RAM est temporaire et modifiable",
+        "La ROM stocke les données de l'utilisateur, la RAM stocke le système",
+        "Il n'y a aucune différence entre les deux"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "La ROM (Read Only Memory) est une mémoire permanente en lecture seule, son contenu est conservé sans alimentation électrique. La RAM (Random Access Memory) est temporaire, modifiable et son contenu est perdu à l'extinction."
+    },
+    {
+      "question_text": "Quels sont les trois piliers de la triple dimension de l'informatique selon le programme ?",
+      "choices": [
+        "Matérielle, logicielle et réseau",
+        "Scientifique, technique et sociétale",
+        "Théorique, pratique et évaluative",
+        "Pédagogique, professionnelle et culturelle"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Selon le programme officiel marocain, l'informatique possède une triple dimension : scientifique (objet, méthodes et concepts), technique (applications et technologies) et sociétale (impact sur la société)."
+    }
+  ]
+}

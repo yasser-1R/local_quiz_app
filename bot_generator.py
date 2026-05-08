@@ -38,13 +38,16 @@ FIRST_NAMES = [
 
 # ---- Pre-seeded bot accounts for LOGIN mode (see seed_students.py) ----
 BOT_LOGIN_ACCOUNTS = [
-    {"pseudo": f"Bot_{name}", "password": "bot_pass1234"}
-    for name in [
-        "Yassin","Mohammed","Fatima","Omar","Sara","Ahmed","Layla","Karim",
-        "Nour","Hassan","Amina","Ali","Huda","Rachid","Adam","Aya","Youssef",
-        "Mariam","Tarek","Dina","Khalid","Zainab","Ibrahim","Salma","Abdullah",
-        "Rania","Said","Nadia","Mustafa","Lina","Walid","Dalia","Amir","Jana",
-        "Hossam","Malak","Ziad","Tala","Majid","Rim",
+    {"pseudo": pseudo, "password": "bot_pass1234"}
+    for pseudo in [
+        "Yassin23","Mohammed17","Fatima45","Omar12","Sara34",
+        "Ahmed28","Layla41","Karim19","Nour52","Hassan27",
+        "Amina33","Ali18","Huda46","Rachid21","Adam39",
+        "Aya14","Youssef55","Mariam26","Tarek31","Dina48",
+        "Khalid22","Zainab37","Ibrahim29","Salma44","Abdullah16",
+        "Rania53","Said25","Nadia38","Mustafa11","Lina47",
+        "Walid30","Dalia42","Amir20","Jana49","Hossam13",
+        "Malak36","Ziad24","Tala51","Majid15","Rim40",
     ]
 ]
 

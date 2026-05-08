@@ -1,0 +1,127 @@
+{
+  "title": "Traitement de texte",
+  "description": "Quiz sur les fonctionnalités d'un logiciel de traitement de texte et l'élaboration de documents",
+  "category": "Module 2 : Les logiciels",
+  "questions": [
+    {
+      "question_text": "Qu'est-ce qu'un logiciel de traitement de texte (texteur) ?",
+      "choices": [
+        "Un logiciel permettant uniquement de lire des fichiers PDF",
+        "Un logiciel permettant de créer, modifier, mettre en forme et imprimer des documents textuels",
+        "Un logiciel de création de diaporamas",
+        "Un logiciel de gestion de bases de données"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Un texteur (logiciel de traitement de texte) est un logiciel permettant de saisir, modifier, mettre en forme et imprimer des documents textuels. Microsoft Word et LibreOffice Writer en sont des exemples."
+    },
+    {
+      "question_text": "Quelle est la mise en forme des caractères dans un document texte ?",
+      "choices": [
+        "Modifier les marges de la page",
+        "Changer la police, la taille, le style (gras, italique, souligné) des caractères",
+        "Insérer des images dans le document",
+        "Numéroter les pages du document"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "La mise en forme des caractères concerne les attributs visuels du texte : la police (Times New Roman, Arial...), la taille (12pt, 14pt...), et le style (gras, italique, souligné, couleur...)."
+    },
+    {
+      "question_text": "Qu'est-ce que la mise en page d'un document ?",
+      "choices": [
+        "La saisie du texte au clavier",
+        "La correction des fautes d'orthographe",
+        "La définition des paramètres de la page : format, marges, orientation",
+        "L'insertion de tableaux dans le document"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "La mise en page concerne les paramètres de la page : le format (A4, Lettre...), les marges (haut, bas, gauche, droite), l'orientation (portrait ou paysage) et d'autres paramètres globaux du document."
+    },
+    {
+      "question_text": "Quel raccourci clavier permet d'enregistrer un document dans la plupart des logiciels ?",
+      "choices": [
+        "Ctrl + P",
+        "Ctrl + S",
+        "Ctrl + O",
+        "Ctrl + N"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Ctrl + S est le raccourci clavier standard pour enregistrer (sauvegarder) un document. Ctrl + P = Imprimer, Ctrl + O = Ouvrir, Ctrl + N = Nouveau document."
+    },
+    {
+      "question_text": "Qu'est-ce qu'un en-tête dans un document Word ?",
+      "choices": [
+        "Le premier paragraphe du document",
+        "Une zone répétée en haut de chaque page contenant des informations comme le titre ou le numéro de page",
+        "Le titre principal du document en grand format",
+        "Un tableau inséré au début du document"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "L'en-tête est une zone qui apparaît en haut de chaque page du document. Elle peut contenir le titre du document, le nom de l'auteur, la date ou d'autres informations répétitives."
+    },
+    {
+      "question_text": "Quelle fonctionnalité permet de vérifier l'orthographe d'un document ?",
+      "choices": [
+        "La mise en forme automatique",
+        "Le correcteur orthographique",
+        "La numérotation des pages",
+        "La table des matières"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Le correcteur orthographique est une fonctionnalité intégrée aux texteurs qui détecte et suggère des corrections pour les fautes d'orthographe et parfois de grammaire dans le document."
+    },
+    {
+      "question_text": "Comment insérer un tableau dans un document de traitement de texte ?",
+      "choices": [
+        "En utilisant le menu Insertion puis Tableau",
+        "En appuyant sur la touche Tab plusieurs fois",
+        "En dessinant avec la souris directement",
+        "En copiant un tableau depuis Excel uniquement"
+      ],
+      "correct_choice_index": 0,
+      "time_limit_seconds": 20,
+      "explanation": "Pour insérer un tableau dans un document, on utilise généralement le menu Insertion puis l'option Tableau. On peut alors définir le nombre de lignes et de colonnes souhaité."
+    },
+    {
+      "question_text": "Qu'est-ce que l'alignement d'un paragraphe ?",
+      "choices": [
+        "L'espacement entre les lignes du paragraphe",
+        "La position horizontale du texte dans la page : gauche, centré, droite ou justifié",
+        "L'indentation du premier mot d'un paragraphe",
+        "La couleur de fond du paragraphe"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "L'alignement d'un paragraphe définit la position horizontale du texte : aligné à gauche, centré, aligné à droite, ou justifié (aligné à la fois à gauche et à droite, comme dans les journaux)."
+    },
+    {
+      "question_text": "Que signifie l'impression en mode Aperçu avant impression ?",
+      "choices": [
+        "Imprimer directement sans configuration",
+        "Voir à l'écran comment sera le document une fois imprimé avant de lancer l'impression",
+        "Enregistrer le document en format PDF",
+        "Envoyer le document par courrier électronique"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "L'Aperçu avant impression permet de visualiser à l'écran le rendu exact du document tel qu'il sera imprimé, afin de vérifier la mise en page et éviter les erreurs avant d'utiliser l'imprimante."
+    },
+    {
+      "question_text": "Quelle est la fonction de la touche Suppr (Delete) dans un texteur ?",
+      "choices": [
+        "Elle supprime le caractère situé à gauche du curseur",
+        "Elle supprime le caractère situé à droite du curseur",
+        "Elle enregistre le document",
+        "Elle insère un saut de page"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "La touche Suppr (Delete) supprime le caractère situé à droite du curseur. La touche Retour arrière (Backspace) supprime le caractère situé à gauche du curseur."
+    }
+  ]
+}

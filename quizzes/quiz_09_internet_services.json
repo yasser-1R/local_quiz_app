@@ -1,0 +1,127 @@
+{
+  "title": "Internet et ses services",
+  "description": "Quiz sur Internet, ses modes de connexion, ses services (Web, email, chat) et ses avantages et inconvénients",
+  "category": "Module 4 : Réseaux et Internet",
+  "questions": [
+    {
+      "question_text": "Qu'est-ce qu'Internet ?",
+      "choices": [
+        "Un réseau local reliant les ordinateurs d'une même école",
+        "Un réseau mondial interconnectant des millions de réseaux et d'ordinateurs",
+        "Un logiciel de messagerie électronique",
+        "Un type de navigateur web"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Internet est un réseau informatique mondial qui interconnecte des millions de réseaux publics et privés, d'entreprises, d'universités et de gouvernements via le protocole TCP/IP."
+    },
+    {
+      "question_text": "Qu'est-ce que le World Wide Web (WWW) ?",
+      "choices": [
+        "L'ensemble du réseau Internet",
+        "Un service d'Internet permettant d'accéder à des pages web via un navigateur",
+        "Un logiciel antivirus pour Internet",
+        "Un protocole de connexion sans fil"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Le World Wide Web (WWW ou Web) est un service d'Internet permettant d'accéder à des pages web liées entre elles par des hyperliens, consultables via un navigateur (Firefox, Chrome, etc.)."
+    },
+    {
+      "question_text": "Qu'est-ce qu'une adresse URL ?",
+      "choices": [
+        "L'adresse physique (MAC) d'un ordinateur",
+        "L'adresse unique d'une page web ou d'une ressource sur Internet",
+        "Le mot de passe d'accès à un site web",
+        "Le nom du fournisseur d'accès à Internet"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Une URL (Uniform Resource Locator) est l'adresse unique qui permet de localiser une ressource (page web, image, fichier) sur Internet. Exemple : https://www.men.gov.ma"
+    },
+    {
+      "question_text": "Qu'est-ce que le courrier électronique (email) ?",
+      "choices": [
+        "Un service permettant d'envoyer des messages et fichiers de façon asynchrone via Internet",
+        "Une page web contenant des actualités",
+        "Un logiciel de traitement de texte en ligne",
+        "Un service de téléphonie par Internet"
+      ],
+      "correct_choice_index": 0,
+      "time_limit_seconds": 20,
+      "explanation": "Le courrier électronique (email) est un service d'Internet permettant d'échanger des messages texte et des fichiers joints de façon asynchrone (l'expéditeur et le destinataire ne sont pas forcément connectés en même temps)."
+    },
+    {
+      "question_text": "Quelle est la différence entre la communication synchrone et asynchrone sur Internet ?",
+      "choices": [
+        "Il n'y a aucune différence entre les deux",
+        "La communication synchrone se fait en temps réel, l'asynchrone ne requiert pas de simultanéité",
+        "La communication synchrone utilise des câbles, l'asynchrone est sans fil",
+        "La communication synchrone est gratuite, l'asynchrone est payante"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "La communication synchrone se fait en temps réel (les participants sont connectés simultanément), comme le chat. L'asynchrone ne nécessite pas de simultanéité, comme l'email (on lit le message plus tard)."
+    },
+    {
+      "question_text": "Qu'est-ce qu'un navigateur web ?",
+      "choices": [
+        "Un logiciel qui crée des sites web",
+        "Un logiciel permettant d'afficher des pages web et de naviguer sur Internet",
+        "Un fournisseur d'accès à Internet",
+        "Un moteur de recherche"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Un navigateur web est un logiciel permettant d'accéder aux pages web et de naviguer sur Internet. Exemples : Mozilla Firefox, Google Chrome, Microsoft Edge, Safari."
+    },
+    {
+      "question_text": "Quel est un avantage majeur d'Internet dans le domaine de l'éducation ?",
+      "choices": [
+        "Internet remplace complètement les enseignants",
+        "Internet donne accès à une grande quantité d'informations et de ressources pédagogiques",
+        "Internet rend les cours obligatoires superflus",
+        "Internet empêche la triche aux examens"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Internet offre un accès à une immense quantité de ressources pédagogiques : cours en ligne, bibliothèques numériques, encyclopédies, vidéos éducatives, favorisant l'apprentissage autonome."
+    },
+    {
+      "question_text": "Lequel des éléments suivants est un inconvénient ou risque lié à l'utilisation d'Internet ?",
+      "choices": [
+        "La facilité d'accès à l'information",
+        "La rapidité de communication",
+        "L'exposition à des contenus inappropriés et la cybercriminalité",
+        "La possibilité de travailler à distance"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "Parmi les inconvénients d'Internet : l'exposition à des contenus inappropriés (violents, haineux), la cybercriminalité (piratage, escroqueries), l'atteinte à la vie privée et la dépendance."
+    },
+    {
+      "question_text": "Qu'est-ce qu'un moteur de recherche sur Internet ?",
+      "choices": [
+        "Un logiciel qui répare les pannes de connexion Internet",
+        "Un service permettant de rechercher des informations sur Internet en tapant des mots-clés",
+        "Un programme qui crée automatiquement des sites web",
+        "Un équipement réseau qui accélère la connexion Internet"
+      ],
+      "correct_choice_index": 1,
+      "time_limit_seconds": 20,
+      "explanation": "Un moteur de recherche est un service web qui permet de trouver des informations sur Internet en saisissant des mots-clés. Exemples : Google, Bing, Yahoo. Ils indexent des milliards de pages web."
+    },
+    {
+      "question_text": "Quelle éthique doit-on respecter lors de l'utilisation d'Internet selon le programme ?",
+      "choices": [
+        "Partager librement toutes les informations personnelles des autres",
+        "Copier tous les contenus sans citer les sources",
+        "Respecter les valeurs sociales, religieuses et citoyennes lors de l'utilisation d'Internet",
+        "Utiliser Internet uniquement pour les jeux vidéo"
+      ],
+      "correct_choice_index": 2,
+      "time_limit_seconds": 20,
+      "explanation": "Selon le programme officiel, l'utilisation d'Internet doit s'accompagner du respect des valeurs sociales, religieuses et citoyennes. Cela inclut le respect de la vie privée, des droits d'auteur et des autres utilisateurs."
+    }
+  ]
+}
