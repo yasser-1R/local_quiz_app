@@ -8,7 +8,13 @@
       "Bash(python -c \"from app.routes.teacher_routes import router; print\\('teacher_routes OK'\\)\")",
       "Bash(python -c \"from app.routes.student_routes import router; print\\('student_routes OK'\\)\")",
       "Bash(python seed_students.py)",
-      "Bash(python -c \"from app.main import app; print\\('App loads OK'\\)\")"
+      "Bash(python -c \"from app.main import app; print\\('App loads OK'\\)\")",
+      "Bash(npm list *)",
+      "Bash(npm install *)",
+      "Bash(node -e \"require\\('docx'\\); console.log\\('ok'\\)\")",
+      "Bash(mkdir -p /tmp/docx_report)",
+      "Read(//tmp/**)",
+      "Bash(npm init *)"
     ]
   }
 }

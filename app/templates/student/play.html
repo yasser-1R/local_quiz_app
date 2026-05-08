@@ -200,6 +200,8 @@ function showRandomResult(m) {
   const progress = m.progress || 0;
   const total = m.total_questions || randomTotal;
   const isDone = m.player_done;
+  const CHOICE_COLORS_R = ['#ef4444', '#3b82f6', '#eab308', '#22c55e'];
+  const choiceColorR = CHOICE_COLORS_R[m.correct_choice_index] ?? '#22c55e';
 
   $screen.innerHTML = `
     <div class="student-result-view random-result">
@@ -210,7 +212,7 @@ function showRandomResult(m) {
         <strong>${m.is_correct ? `+${lastPoints} pts` : 'Continue!'}</strong>
         <span>${streak > 1 ? `Série de ${streak} bonnes réponses 🔥` : (m.is_correct ? 'Excellent!' : 'Prochaine question')}</span>
       </div>
-      <div class="correct-choice-card">
+      <div class="correct-choice-card" style="background:${choiceColorR};border-color:${choiceColorR};box-shadow:0 14px 40px ${choiceColorR}66;backdrop-filter:none;">
         <span>Bonne réponse</span>
         <strong>${escapeHtml(correctText)}</strong>
       </div>
@@ -311,6 +313,9 @@ function showResult(m) {
   streak = wasCorrect ? streak + 1 : 0;
   triggerBurst(wasCorrect ? 'good' : 'bad');
 
+  const CHOICE_COLORS = ['#ef4444', '#3b82f6', '#eab308', '#22c55e'];
+  const choiceColor = CHOICE_COLORS[m.correct_choice_index] ?? '#22c55e';
+
   $screen.innerHTML = `
     <div class="student-result-view">
       <h1 class="${wasCorrect ? 'result-good' : 'result-bad'}">
@@ -320,7 +325,7 @@ function showResult(m) {
         <strong>${wasCorrect ? `+${lastPoints} pts` : 'Garde le rythme'}</strong>
         <span>${streak > 1 ? `Série de ${streak} bonnes réponses` : (wasCorrect ? 'Excellent départ' : 'La prochaine peut tout changer')}</span>
       </div>
-      <div class="correct-choice-card">
+      <div class="correct-choice-card" style="background:${choiceColor};border-color:${choiceColor};box-shadow:0 14px 40px ${choiceColor}66;backdrop-filter:none;">
         <span>Bonne réponse</span>
         <strong>${escapeHtml(m.question.choices[m.correct_choice_index].text)}</strong>
       </div>
