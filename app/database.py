@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     session_code             TEXT UNIQUE NOT NULL,
     state                    TEXT NOT NULL DEFAULT 'WAITING',
     mode                     TEXT NOT NULL DEFAULT 'NORMAL',
-    connection_mode          TEXT NOT NULL DEFAULT 'GUEST',
+    connection_mode          TEXT NOT NULL DEFAULT 'BLOCKED',
     current_question_index   INTEGER NOT NULL DEFAULT -1,
     current_question_started REAL,
     started_at               TEXT,
@@ -205,8 +205,13 @@ def _migrate(conn) -> None:
             )
         if "connection_mode" not in cols:
             conn.execute(
-                "ALTER TABLE sessions ADD COLUMN connection_mode TEXT NOT NULL DEFAULT 'GUEST'"
+                "ALTER TABLE sessions ADD COLUMN connection_mode TEXT NOT NULL DEFAULT 'BLOCKED'"
             )
+        # Ensure WAITING/LOBBY sessions default to BLOCKED, not GUEST
+        conn.execute(
+            "UPDATE sessions SET connection_mode='BLOCKED' "
+            "WHERE state IN ('WAITING', 'LOBBY') AND connection_mode='GUEST'"
+        )
 
     finally:
         conn.execute("PRAGMA legacy_alter_table = OFF")

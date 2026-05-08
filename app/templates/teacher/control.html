@@ -176,9 +176,10 @@ body.bg-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
 .anim-avatar { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 5px 16px rgba(0,0,0,0.25); flex-shrink: 0; }
 .anim-name { flex: 1; font-size: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .anim-pts { font-size: 26px; font-weight: 800; color: #fbbf24; min-width: 90px; text-align: right; }
-.anim-change { font-size: 22px; font-weight: 800; min-width: 60px; text-align: left; padding-left: 8px; }
-.moved-up .anim-change { color: #22c55e; }
-.moved-down .anim-change { color: #ef4444; }
+.anim-change { font-size: 20px; font-weight: 900; min-width: 64px; text-align: center; letter-spacing: -0.5px; padding: 4px 10px; border-radius: 8px; }
+.anim-change.change-up { color: #22c55e; background: rgba(34,197,94,0.12); }
+.anim-change.change-down { color: #f87171; background: rgba(239,68,68,0.10); }
+.anim-change.change-same { color: rgba(255,255,255,0.35); }
 .anim-row.spotlight { animation: rankSpotlight 1s ease-out; }
 @keyframes rankSpotlight {
   0% { filter: brightness(1); transform: scale(1); }
@@ -508,55 +509,83 @@ function showScoresPhase(m) {
   hideAll();
   $scoresView.style.display = 'block';
 
-  // Normal mode shows TOP 5
-  const top5 = m.board.slice(0, 5);
-  const previousRanks = {};
-  (m.board_before || currentBoardBefore || []).forEach(p => {
-    previousRanks[p.id] = p.rank;
-  });
+  const N = leaderboardTopN;
+  const topN = m.board.slice(0, N);
+  const STEP = 96; // row height + gap
 
-  const ROW_H = 92;
-  $scoresAfter.style.minHeight = `${top5.length * ROW_H}px`;
+  // Fix container height and clip so off-screen entrants are hidden
+  $scoresAfter.style.height = `${topN.length * STEP}px`;
+  $scoresAfter.style.overflow = 'hidden';
   $scoresAfter.innerHTML = '';
 
-  top5.forEach((p, i) => {
-    const medal = p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : p.rank === 3 ? '🥉' : '';
-    const previous = previousRanks[p.id];
-    const movement = previous != null ? previous - p.rank : 0;
-    const movClass = movement > 0 ? 'moved-up' : movement < 0 ? 'moved-down' : '';
-    const movText  = movement > 0 ? `▲${movement}` : movement < 0 ? `▼${Math.abs(movement)}` : '—';
+  // Track only PREVIOUS top-N positions (not top-10)
+  const prevBoard = m.board_before || currentBoardBefore || [];
+  const prevTopN = prevBoard.slice(0, N);
+  const prevVisualMap = {}; // player id → visual slot (0..N-1) in prev top-N
+  prevTopN.forEach((p, i) => { prevVisualMap[p.id] = i; });
+
+  // Full previous board for actual rank change text
+  const prevRankMap = {};
+  prevBoard.forEach((p, i) => { prevRankMap[p.id] = i + 1; });
+
+  const rowEls = [];
+  topN.forEach((p, newIdx) => {
+    const newRank = newIdx + 1;
+    const wasInPrevTopN = Object.prototype.hasOwnProperty.call(prevVisualMap, p.id);
+    // New entrants start just below the container (clipped by overflow:hidden)
+    const startVisualIdx = wasInPrevTopN ? prevVisualMap[p.id] : N;
+    const startY = startVisualIdx * STEP;
+
+    const oldRank = prevRankMap[p.id] ?? null;
+    const rankDelta = oldRank !== null ? oldRank - newRank : 0;
+
+    const medal = newRank === 1 ? '🥇' : newRank === 2 ? '🥈' : newRank === 3 ? '🥉' : '';
+    const changeClass = rankDelta > 0 ? 'change-up' : rankDelta < 0 ? 'change-down' : 'change-same';
+    const changeText  = rankDelta > 0 ? `▲${rankDelta}` : rankDelta < 0 ? `▼${Math.abs(rankDelta)}` : '—';
 
     const row = document.createElement('div');
-    row.className = `anim-row rank-${p.rank} ${movClass}`;
-    row.style.top = `${i * ROW_H}px`;
-    row.style.opacity = '0';
-    row.style.transform = 'translateY(40px) scale(0.6)';
+    row.className = `anim-row${newRank <= 3 ? ' rank-' + newRank : ''}`;
+    row.style.cssText = `top:${startY}px; opacity:0; transition:none;`;
     row.innerHTML = `
-      <span class="anim-rank">${medal || '#'+p.rank}</span>
+      <span class="anim-rank">${medal || '#' + newRank}</span>
       <span class="anim-avatar" style="background:${p.avatar_color||'#6366f1'};">${p.avatar_character||'?'}</span>
       <span class="anim-name">${escapeHtml(p.nickname)}</span>
-      <span class="anim-pts" id="pts-${i}">0</span>
-      <span class="anim-change">${movText}</span>`;
+      <span class="anim-pts" id="pts-${newIdx}">0</span>
+      <span class="anim-change ${changeClass}">${changeText}</span>`;
     $scoresAfter.appendChild(row);
+    rowEls.push({ row, newIdx, rankDelta, p, wasInPrevTopN });
+  });
 
-    // Pop-in animation staggered
+  // PHASE 1 — Fade in only players already in prev top-N at their old visual positions
+  const prevRows = rowEls.filter(r => r.wasInPrevTopN);
+  prevRows.forEach(({ row }, i) => {
+    setTimeout(() => { row.style.opacity = '1'; }, i * 100 + 80);
+  });
+
+  // PHASE 2 — All rows fly to final positions bottom-to-top (Kahoot! drama: 1st place arrives last)
+  const phase2Start = Math.max(prevRows.length, 1) * 100 + 440;
+  const bottomFirst = [...rowEls].sort((a, b) => b.newIdx - a.newIdx);
+  bottomFirst.forEach(({ row, newIdx, rankDelta, p }, i) => {
     setTimeout(() => {
-      row.style.transition = 'all 0.55s cubic-bezier(0.34, 1.7, 0.64, 1)';
+      row.style.transition = 'top 0.72s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease';
       row.style.opacity = '1';
-      row.style.transform = 'translateY(0) scale(1)';
-      row.classList.add('pop-flash');
-      setTimeout(() => row.classList.remove('pop-flash'), 350);
-      if (i < 3) {
+      row.style.top = `${newIdx * STEP}px`;
+
+      if (rankDelta > 0) {
         setTimeout(() => {
           row.classList.add('spotlight');
           setTimeout(() => row.classList.remove('spotlight'), 1000);
-        }, 200);
+        }, 780);
       }
-      // Score counter
-      const ptsEl = row.querySelector(`#pts-${i}`);
-      if (ptsEl) animateScoreCount(ptsEl, 0, p.total_score, 700, 100);
-    }, i * 140);
+
+      const ptsEl = document.getElementById(`pts-${newIdx}`);
+      if (ptsEl) animateScoreCount(ptsEl, 0, p.total_score, 700);
+    }, phase2Start + i * 130);
   });
+
+  // Restore overflow once animation is complete
+  setTimeout(() => { $scoresAfter.style.overflow = ''; },
+    phase2Start + rowEls.length * 130 + 900);
 
   updateButton();
 }

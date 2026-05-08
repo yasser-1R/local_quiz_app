@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(python -c ' *)",
-      "Bash(python -c \"from app.main import app; print\\('OK'\\)\")"
+      "Bash(python -c \"from app.main import app; print\\('OK'\\)\")",
+      "Bash(pip install *)",
+      "Bash(python -c \"import xlsxwriter; print\\('xlsxwriter', xlsxwriter.__version__, 'OK'\\)\")",
+      "Bash(python -c \"from app.routes.teacher_routes import router; print\\('teacher_routes OK'\\)\")",
+      "Bash(python -c \"from app.routes.student_routes import router; print\\('student_routes OK'\\)\")",
+      "Bash(python seed_students.py)",
+      "Bash(python -c \"from app.main import app; print\\('App loads OK'\\)\")"
     ]
   }
 }

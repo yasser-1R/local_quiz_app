@@ -28,7 +28,8 @@ async def home(request: Request):
         if player and player["session_id"] == cur["id"]:
             return RedirectResponse(url="/play", status_code=303)
 
-    connection_mode = cur.get("connection_mode", "GUEST") if cur else "GUEST"
+    # Always default to BLOCKED — teacher must explicitly open the session
+    connection_mode = (cur.get("connection_mode") or "BLOCKED") if cur else "BLOCKED"
 
     # In LOGIN mode: if already authenticated, redirect to join (skip login form)
     if connection_mode == "LOGIN":
@@ -82,7 +83,11 @@ async def do_join(
         return _error(request, nickname, "Veuillez entrer un pseudo.")
 
     session = session_service.ensure_current_session()
-    connection_mode = session.get("connection_mode", "GUEST")
+    connection_mode = session.get("connection_mode") or "BLOCKED"
+
+    # BLOCKED mode: reject directly
+    if connection_mode == "BLOCKED":
+        return _error(request, nickname, "La session est verrouillée. Attendez le professeur.")
 
     # SIGNUP and LOGIN modes must go through /auth/* endpoints
     if connection_mode in ("SIGNUP", "LOGIN"):
@@ -127,7 +132,7 @@ async def do_join(
 
 def _error(request, nickname, message):
     cur = session_service.get_current_session()
-    connection_mode = cur.get("connection_mode", "GUEST") if cur else "GUEST"
+    connection_mode = (cur.get("connection_mode") or "BLOCKED") if cur else "BLOCKED"
     return templates.TemplateResponse(
         request,
         "student/join.html",
@@ -157,12 +162,6 @@ async def play_page(request: Request):
         resp.delete_cookie(PLAYER_COOKIE)
         return resp
 
-    # Determine if this student has a persistent account
-    student_token = request.cookies.get(STUDENT_COOKIE)
-    student = None
-    if student_token:
-        student = student_service.get_student_by_token(student_token)
-
     return templates.TemplateResponse(
         request,
         "student/play.html",
@@ -170,33 +169,7 @@ async def play_page(request: Request):
             "app_title": APP_TITLE,
             "session": cur,
             "player": player,
-            "student": student,
             "random_answer_display_seconds": RANDOM_ANSWER_DISPLAY_SECONDS,
-        },
-    )
-
-
-@router.get("/student/stats", response_class=HTMLResponse)
-async def student_stats(request: Request):
-    """Historical performance stats for logged-in students."""
-    student_token = request.cookies.get(STUDENT_COOKIE)
-    if not student_token:
-        return RedirectResponse(url="/", status_code=303)
-
-    student = student_service.get_student_by_token(student_token)
-    if student is None:
-        resp = RedirectResponse(url="/", status_code=303)
-        resp.delete_cookie(STUDENT_COOKIE)
-        return resp
-
-    stats = student_service.get_student_stats(student["id"])
-    return templates.TemplateResponse(
-        request,
-        "student/stats.html",
-        {
-            "app_title": APP_TITLE,
-            "student": student,
-            "stats": stats,
         },
     )
 
@@ -205,6 +178,15 @@ async def student_stats(request: Request):
 async def leave():
     resp = RedirectResponse(url="/", status_code=303)
     resp.delete_cookie(PLAYER_COOKIE)
+    return resp
+
+
+@router.get("/leave-all")
+async def leave_all():
+    """Clear ALL session cookies — used when quiz resets or multiple students share one PC."""
+    resp = RedirectResponse(url="/", status_code=303)
+    resp.delete_cookie(PLAYER_COOKIE)
+    resp.delete_cookie(STUDENT_COOKIE)
     return resp
 
 

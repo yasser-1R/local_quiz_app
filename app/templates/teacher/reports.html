@@ -1,5 +1,95 @@
 {% extends "base.html" %}
 {% block body_class %}bg-dashboard{% endblock %}
+{% block extra_styles %}
+<style>
+/* ── Tab system ─────────────────────────────────────────── */
+.r-tabs { display:flex; gap:4px; background:#f1f5f9; border-radius:16px; padding:5px; margin-bottom:28px; }
+.r-tab  { flex:1; padding:11px 16px; border:none; background:transparent; border-radius:12px;
+          font-size:14px; font-weight:700; color:#64748b; cursor:pointer; transition:all .18s;
+          display:flex; align-items:center; justify-content:center; gap:6px; }
+.r-tab.active { background:#fff; color:#4f46e5; box-shadow:0 2px 10px rgba(99,102,241,.15); }
+.r-tab .cnt { background:#e0e7ff; color:#4f46e5; font-size:12px; padding:1px 7px;
+              border-radius:20px; font-weight:800; }
+.r-tab.active .cnt { background:#4f46e5; color:#fff; }
+.r-panel { display:none; }
+.r-panel.active { display:block; }
+
+/* ── Section header ─────────────────────────────────────── */
+.sec-header { display:flex; align-items:center; justify-content:space-between;
+              flex-wrap:wrap; gap:12px; margin-bottom:20px; }
+.sec-header h2 { font-size:20px; font-weight:800; color:#1e293b; margin:0; }
+.sec-header p  { color:#64748b; font-size:13px; margin:0; }
+
+/* ── Empty state ────────────────────────────────────────── */
+.empty-state { text-align:center; padding:64px 24px; color:#94a3b8; }
+.empty-state .empty-icon { font-size:48px; margin-bottom:16px; }
+.empty-state p { font-size:18px; font-weight:700; color:#475569; margin:0 0 6px; }
+.empty-state span { font-size:14px; }
+
+/* ── Cards (sessions & quizzes) ─────────────────────────── */
+.card-grid { display:flex; flex-direction:column; gap:12px; }
+.r-card { background:#fff; border-radius:16px; padding:20px 24px;
+          border:1px solid #e2e8f0; display:flex; align-items:center;
+          gap:20px; box-shadow:0 1px 4px rgba(0,0,0,.04);
+          transition:box-shadow .15s, transform .15s; }
+.r-card:hover { box-shadow:0 4px 16px rgba(99,102,241,.1); transform:translateY(-1px); }
+.r-card-icon { width:52px; height:52px; border-radius:14px; display:flex;
+               align-items:center; justify-content:center; font-size:26px;
+               flex-shrink:0; }
+.r-card-icon.session { background:#e0e7ff; }
+.r-card-icon.quiz    { background:#dcfce7; }
+.r-card-body { flex:1; min-width:0; }
+.r-card-body h3 { font-size:16px; font-weight:800; color:#1e293b; margin:0 0 4px;
+                  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.r-card-body .meta { font-size:13px; color:#64748b; margin:0 0 6px; }
+.r-card-badges { display:flex; gap:6px; flex-wrap:wrap; }
+.badge { display:inline-flex; align-items:center; gap:4px; padding:3px 9px;
+         border-radius:8px; font-size:12px; font-weight:700; }
+.badge-blue   { background:#e0e7ff; color:#4f46e5; }
+.badge-green  { background:#dcfce7; color:#16a34a; }
+.badge-amber  { background:#fef3c7; color:#d97706; }
+.badge-red    { background:#fee2e2; color:#dc2626; }
+.badge-gray   { background:#f1f5f9; color:#475569; }
+.badge-purple { background:#f3e8ff; color:#7c3aed; }
+.r-card-actions { display:flex; gap:8px; flex-shrink:0; flex-wrap:wrap; justify-content:flex-end; }
+
+/* ── Student table ──────────────────────────────────────── */
+.stu-table { width:100%; border-collapse:collapse; }
+.stu-table th { background:#f8fafc; padding:10px 14px; font-size:13px; font-weight:700;
+                color:#475569; text-align:left; border-bottom:2px solid #e2e8f0; }
+.stu-table td { padding:12px 14px; border-bottom:1px solid #f1f5f9; font-size:14px; color:#1e293b; }
+.stu-table tr:hover td { background:#f8fafc; }
+.stu-avatar { width:38px; height:38px; border-radius:50%; display:inline-flex;
+              align-items:center; justify-content:center; font-size:20px;
+              box-shadow:0 2px 8px rgba(0,0,0,.12); vertical-align:middle; }
+.sr-bar { display:inline-flex; align-items:center; gap:8px; }
+.sr-track { width:72px; height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden; }
+.sr-fill  { height:100%; border-radius:4px; background:#22c55e; }
+.sr-fill.mid { background:#fbbf24; }
+.sr-fill.bad { background:#f87171; }
+
+/* ── Buttons ────────────────────────────────────────────── */
+.btn-report { display:inline-flex; align-items:center; gap:5px; padding:7px 14px;
+              border-radius:10px; background:#6366f1; color:#fff; font-weight:700;
+              font-size:13px; text-decoration:none; white-space:nowrap; }
+.btn-report:hover { background:#4f46e5; }
+.btn-xlsx   { display:inline-flex; align-items:center; gap:5px; padding:7px 14px;
+              border-radius:10px; background:#22c55e; color:#fff; font-weight:700;
+              font-size:13px; text-decoration:none; white-space:nowrap; }
+.btn-xlsx:hover { background:#16a34a; }
+.btn-ghost  { display:inline-flex; align-items:center; gap:5px; padding:7px 14px;
+              border-radius:10px; background:#f1f5f9; color:#475569; font-weight:700;
+              font-size:13px; text-decoration:none; white-space:nowrap; }
+.btn-ghost:hover { background:#e2e8f0; }
+
+/* ── Success rate donut mini ────────────────────────────── */
+.mini-rate { font-size:22px; font-weight:800; }
+.mini-rate.good { color:#16a34a; }
+.mini-rate.mid  { color:#d97706; }
+.mini-rate.bad  { color:#dc2626; }
+.mini-rate.none { color:#94a3b8; }
+</style>
+{% endblock %}
 {% block content %}
 
 <header class="dashboard-header">
@@ -17,41 +107,204 @@
 </header>
 
 <main class="dashboard-main">
-  <div class="quiz-list-header">
-    <div>
-      <h2 style="font-size:24px;font-weight:700;color:#1e293b;margin:0 0 4px;">Sessions archivées</h2>
-      <p style="color:#64748b;font-size:14px;margin:0;">Rapports générés à partir des quiz terminés.</p>
-    </div>
+
+  <div style="margin-bottom:24px;">
+    <h2 style="font-size:26px;font-weight:800;color:#1e293b;margin:0 0 4px;">Rapports &amp; Statistiques</h2>
+    <p style="color:#64748b;font-size:14px;margin:0;">Analyses de sessions, de quiz et de progression des élèves.</p>
   </div>
 
-  {% if not sessions %}
-  <div class="empty-state">
-    <p>📊 Aucun rapport disponible</p>
-    <span class="muted">Terminez un quiz pour créer une archive.</span>
+  <!-- ══ TAB BUTTONS ══════════════════════════════════════════════ -->
+  <div class="r-tabs">
+    <button class="r-tab active" onclick="switchTab('sessions', this)">
+      📋 Sessions <span class="cnt">{{ sessions|length }}</span>
+    </button>
+    <button class="r-tab" onclick="switchTab('quizzes', this)">
+      📚 Par quiz <span class="cnt">{{ quizzes|length }}</span>
+    </button>
+    <button class="r-tab" onclick="switchTab('students', this)">
+      👤 Par élève <span class="cnt">{{ students|length }}</span>
+    </button>
   </div>
-  {% else %}
-  <div class="quiz-list">
-    {% for session in sessions %}
-    <div class="quiz-card">
-      <div class="quiz-info">
-        <h3>{{ session.quiz_title or "Quiz supprimé" }}</h3>
-        <p>
-          {{ session.player_count }} élève{{ 's' if session.player_count != 1 }} ·
-          {{ session.question_count }} question{{ 's' if session.question_count != 1 }}
-        </p>
-        <div class="quiz-meta">
-          <span>Terminé le {{ session.ended_at[:10] if session.ended_at else '—' }}</span>
-          <span class="dot"></span>
-          <span>Session {{ session.session_code }}</span>
-        </div>
-      </div>
-      <div class="quiz-actions">
-        <a class="btn-launch" href="/teacher/reports/{{ session.id }}">Voir le rapport</a>
-        <a class="btn-edit" href="/teacher/reports/{{ session.id }}/export.csv">⬇ CSV</a>
+
+  <!-- ══ TAB 1 — SESSIONS ════════════════════════════════════════ -->
+  <div id="panel-sessions" class="r-panel active">
+    <div class="sec-header">
+      <div>
+        <h2>Sessions archivées</h2>
+        <p>Chaque session terminée génère un rapport détaillé.</p>
       </div>
     </div>
-    {% endfor %}
+
+    {% if not sessions %}
+    <div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <p>Aucune session terminée</p>
+      <span>Terminez un quiz pour créer une archive.</span>
+    </div>
+    {% else %}
+    <div class="card-grid">
+      {% for s in sessions %}
+      <div class="r-card">
+        <div class="r-card-icon session">📋</div>
+        <div class="r-card-body">
+          <h3>{{ s.quiz_title or "Quiz supprimé" }}</h3>
+          <p class="meta">
+            {{ s.ended_at[:10] if s.ended_at else '—' }} &nbsp;·&nbsp;
+            Session <strong>{{ s.session_code }}</strong>
+          </p>
+          <div class="r-card-badges">
+            <span class="badge badge-blue">👥 {{ s.player_count }} élève{{ 's' if s.player_count != 1 }}</span>
+            <span class="badge badge-gray">❓ {{ s.question_count }} question{{ 's' if s.question_count != 1 }}</span>
+            {% if s.mode == 'RANDOM' %}
+            <span class="badge badge-purple">🎲 Aléatoire</span>
+            {% else %}
+            <span class="badge badge-gray">▶ Normal</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="r-card-actions">
+          <a class="btn-report" href="/teacher/reports/{{ s.id }}">📊 Rapport</a>
+          <a class="btn-xlsx"   href="/teacher/reports/{{ s.id }}/export.xlsx">⬇ Excel</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
-  {% endif %}
+
+  <!-- ══ TAB 2 — PAR QUIZ ════════════════════════════════════════ -->
+  <div id="panel-quizzes" class="r-panel">
+    <div class="sec-header">
+      <div>
+        <h2>Statistiques par quiz</h2>
+        <p>Évolution et performances cumulées de chaque quiz sur toutes ses sessions.</p>
+      </div>
+    </div>
+
+    {% if not quizzes %}
+    <div class="empty-state">
+      <div class="empty-icon">📚</div>
+      <p>Aucun quiz disponible</p>
+      <span>Créez un quiz pour voir les statistiques.</span>
+    </div>
+    {% else %}
+    <div class="card-grid">
+      {% for q in quizzes %}
+      <div class="r-card">
+        <div class="r-card-icon quiz">📚</div>
+        <div class="r-card-body">
+          <h3>{{ q.title }}</h3>
+          <p class="meta">
+            {{ q.question_count }} question{{ 's' if q.question_count != 1 }}
+            {% if q.category %}&nbsp;·&nbsp;{{ q.category }}{% endif %}
+          </p>
+          <div class="r-card-badges">
+            <span class="badge badge-blue">🔄 {{ q.session_count }} session{{ 's' if q.session_count != 1 }}</span>
+            <span class="badge badge-gray">👥 {{ q.total_players }} joueur{{ 's' if q.total_players != 1 }}</span>
+            {% if q.session_count > 0 %}
+            {% set sr = q.avg_success_rate %}
+            <span class="badge {% if sr >= 70 %}badge-green{% elif sr >= 40 %}badge-amber{% else %}badge-red{% endif %}">
+              ✓ {{ sr }}% réussite
+            </span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="r-card-actions">
+          {% if q.session_count > 0 %}
+          <a class="btn-report" href="/teacher/reports/quiz/{{ q.id }}">📊 Stats</a>
+          <a class="btn-xlsx"   href="/teacher/reports/quiz/{{ q.id }}/export.xlsx">⬇ Excel</a>
+          {% else %}
+          <span class="btn-ghost">Pas encore joué</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ══ TAB 3 — PAR ÉLÈVE ═══════════════════════════════════════ -->
+  <div id="panel-students" class="r-panel">
+    <div class="sec-header">
+      <div>
+        <h2>Statistiques par élève</h2>
+        <p>Progression et performances de chaque compte élève enregistré.</p>
+      </div>
+    </div>
+
+    {% if not students %}
+    <div class="empty-state">
+      <div class="empty-icon">👤</div>
+      <p>Aucun compte élève</p>
+      <span>Les élèves apparaissent ici en mode Inscription ou Connexion.</span>
+    </div>
+    {% else %}
+    <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.04);">
+      <table class="stu-table">
+        <thead>
+          <tr>
+            <th>Élève</th>
+            <th>Sessions</th>
+            <th>Score total</th>
+            <th>Taux moyen</th>
+            <th>Réponses</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for st in students %}
+          <tr>
+            <td>
+              <span class="stu-avatar" style="background:{{ st.avatar_color or '#6366f1' }};">
+                {{ st.avatar_character or '🦊' }}
+              </span>
+              <strong style="margin-left:10px;">{{ st.pseudo }}</strong>
+            </td>
+            <td>
+              <span class="badge badge-blue">{{ st.session_count }}</span>
+            </td>
+            <td><strong style="color:#4f46e5;font-size:16px;">{{ st.total_score }}</strong> pts</td>
+            <td>
+              <div class="sr-bar">
+                <div class="sr-track">
+                  <div class="sr-fill{% if st.success_rate < 40 %} bad{% elif st.success_rate < 70 %} mid{% endif %}"
+                       style="width:{{ st.success_rate }}%;"></div>
+                </div>
+                <span class="{% if st.success_rate >= 70 %}mini-rate good{% elif st.success_rate >= 40 %}mini-rate mid{% elif st.total_answers > 0 %}mini-rate bad{% else %}mini-rate none{% endif %}">
+                  {{ st.success_rate }}%
+                </span>
+              </div>
+            </td>
+            <td style="color:#64748b;">
+              {{ st.total_correct }} / {{ st.total_answers }}
+            </td>
+            <td>
+              <a class="btn-report" href="/teacher/reports/student/{{ st.id }}">📊 Profil</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+
 </main>
+
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.r-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.r-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Activate tab from URL hash if present
+const hash = location.hash.replace('#', '');
+if (['sessions', 'quizzes', 'students'].includes(hash)) {
+  const btn = document.querySelector(`.r-tab[onclick*="${hash}"]`);
+  if (btn) switchTab(hash, btn);
+}
+</script>
+
 {% endblock %}

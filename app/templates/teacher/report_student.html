@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+{% block body_class %}bg-dashboard{% endblock %}
+{% block extra_styles %}
+<style>
+/* ── KPI grid ──────────────────────────────────────────── */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+            gap:14px; margin-bottom:28px; }
+.kpi-card { background:#fff; border-radius:16px; padding:20px 22px; text-align:center;
+            border:1px solid #e2e8f0; box-shadow:0 1px 4px rgba(0,0,0,.05); }
+.kpi-card .kpi-label { font-size:12px; color:#64748b; font-weight:700; text-transform:uppercase;
+                       letter-spacing:.5px; display:block; margin-bottom:8px; }
+.kpi-card .kpi-value { font-size:32px; font-weight:900; color:#4f46e5; display:block; line-height:1; }
+.kpi-card .kpi-sub   { font-size:13px; color:#94a3b8; margin-top:6px; display:block; }
+
+/* ── Avatar hero ──────────────────────────────────────── */
+.student-hero { display:flex; align-items:center; gap:20px; margin-bottom:28px; flex-wrap:wrap; }
+.student-avatar-lg { width:80px; height:80px; border-radius:50%; display:flex; align-items:center;
+                     justify-content:center; font-size:44px; flex-shrink:0;
+                     box-shadow:0 6px 24px rgba(0,0,0,.15); position:relative; }
+.student-avatar-lg .acc { position:absolute; bottom:-4px; right:-4px;
+                          font-size:22px; line-height:1; }
+.student-hero-info h2 { font-size:26px; font-weight:900; color:#1e293b; margin:0 0 4px; }
+.student-hero-info p  { color:#64748b; font-size:14px; margin:0; }
+
+/* ── Chart cards ──────────────────────────────────────── */
+.chart-card { background:#fff; border-radius:16px; padding:24px;
+              box-shadow:0 2px 8px rgba(0,0,0,.06); border:1px solid #e2e8f0; margin-bottom:20px; }
+.chart-card h3 { font-size:15px; font-weight:800; color:#1e293b; margin:0 0 20px; }
+.chart-row { display:grid; grid-template-columns:2fr 1fr; gap:20px; margin-bottom:20px; }
+@media(max-width:768px){ .chart-row { grid-template-columns:1fr; } }
+
+/* ── Session history table ────────────────────────────── */
+.sess-table { width:100%; border-collapse:collapse; }
+.sess-table th { background:#f8fafc; padding:10px 14px; font-size:13px; font-weight:700;
+                 color:#475569; text-align:left; border-bottom:2px solid #e2e8f0; }
+.sess-table td { padding:11px 14px; border-bottom:1px solid #f1f5f9; font-size:14px; color:#1e293b; }
+.sess-table tr:hover td { background:#f8fafc; }
+.sess-table tr:last-child td { border-bottom:none; }
+
+/* ── Rank badge ────────────────────────────────────────── */
+.rank-pill { display:inline-flex; align-items:center; justify-content:center;
+             width:34px; height:34px; border-radius:50%; font-size:14px; font-weight:900; }
+.rank-pill.r1 { background:#fef9c3; color:#92400e; }
+.rank-pill.r2 { background:#f3f4f6; color:#374151; }
+.rank-pill.r3 { background:#fef3e2; color:#9a3412; }
+.rank-pill.rn { background:#e0e7ff; color:#4f46e5; }
+
+/* ── Progress bar ──────────────────────────────────────── */
+.sr-bar  { display:inline-flex; align-items:center; gap:8px; }
+.sr-track { width:80px; height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden; }
+.sr-fill  { height:100%; border-radius:4px; background:#22c55e; }
+.sr-fill.mid { background:#fbbf24; }
+.sr-fill.bad { background:#f87171; }
+
+/* ── Badges ───────────────────────────────────────────── */
+.badge { display:inline-flex; align-items:center; gap:4px; padding:3px 9px;
+         border-radius:8px; font-size:12px; font-weight:700; }
+.badge-blue  { background:#e0e7ff; color:#4f46e5; }
+.badge-green { background:#dcfce7; color:#16a34a; }
+.badge-amber { background:#fef3c7; color:#d97706; }
+.badge-red   { background:#fee2e2; color:#dc2626; }
+.badge-gray  { background:#f1f5f9; color:#475569; }
+
+/* ── Nav buttons ──────────────────────────────────────── */
+.btn-back { display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;
+            background:#f1f5f9;color:#475569;font-weight:700;font-size:13px;text-decoration:none; }
+.btn-back:hover { background:#e2e8f0; }
+.btn-xlsx { display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;
+            background:#22c55e;color:#fff;font-weight:700;font-size:13px;text-decoration:none; }
+.btn-xlsx:hover { background:#16a34a; }
+.btn-link { display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:9px;
+            background:#6366f1;color:#fff;font-weight:700;font-size:12px;text-decoration:none; }
+.btn-link:hover { background:#4f46e5; }
+
+/* ── Best session card ────────────────────────────────── */
+.highlight-card { background:linear-gradient(135deg,#f0fdf4,#dcfce7);
+                  border:1.5px solid #86efac; border-radius:14px; padding:16px 20px;
+                  display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+.highlight-card .hi-icon { font-size:32px; flex-shrink:0; }
+.highlight-card .hi-body h4 { font-size:15px; font-weight:800; color:#15803d; margin:0 0 2px; }
+.highlight-card .hi-body p  { font-size:13px; color:#166534; margin:0; }
+</style>
+{% endblock %}
+{% block content %}
+
+<header class="dashboard-header">
+  <div class="logo">
+    <span class="logo-icon">🎓</span>
+    <h1>{{ app_title }}</h1>
+  </div>
+  <nav class="nav-links">
+    <a class="btn-nav" href="/teacher">Mes quizzes</a>
+    <a class="btn-nav active" href="/teacher/reports">Rapports</a>
+    <a class="btn-nav" href="/teacher/lobby">Salle d'attente</a>
+    <a class="btn-nav" href="/display" target="_blank">Projecteur</a>
+    <a class="btn-nav" href="/teacher/logout">Déconnexion</a>
+  </nav>
+</header>
+
+<main class="dashboard-main">
+
+  <!-- Hero ─────────────────────────────────────────────────────── -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
+    <div class="student-hero">
+      <div class="student-avatar-lg" style="background:{{ report.student.avatar_color or '#6366f1' }};">
+        <span>{{ report.student.avatar_character or '🦊' }}</span>
+        {% if report.student.avatar_accessory %}
+        <span class="acc">{{ report.student.avatar_accessory }}</span>
+        {% endif %}
+      </div>
+      <div class="student-hero-info">
+        <h2>{{ report.student.pseudo }}</h2>
+        <p>
+          Compte créé le {{ report.student.created_at[:10] if report.student.created_at else '—' }}
+          &nbsp;·&nbsp;
+          {{ report.overview.total_sessions }} session{{ 's' if report.overview.total_sessions != 1 }} jouée{{ 's' if report.overview.total_sessions != 1 }}
+        </p>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;">
+      <a class="btn-back" href="/teacher/reports#students">← Retour</a>
+      {% if report.overview.total_sessions > 0 %}
+      <a class="btn-xlsx" href="/teacher/reports/student/{{ report.student.id }}/export.xlsx">⬇ Excel</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if report.overview.total_sessions == 0 %}
+  <!-- No participation yet -->
+  <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:64px 24px;text-align:center;">
+    <div style="font-size:48px;margin-bottom:16px;">🎮</div>
+    <p style="font-size:18px;font-weight:700;color:#475569;margin:0 0 6px;">Aucune session jouée</p>
+    <span style="color:#94a3b8;font-size:14px;">Cet élève n'a pas encore participé à un quiz terminé.</span>
+  </div>
+  {% else %}
+
+  <!-- KPI strip ────────────────────────────────────────────────── -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <span class="kpi-label">Sessions jouées</span>
+      <span class="kpi-value">{{ report.overview.total_sessions }}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Score total cumulé</span>
+      <span class="kpi-value" style="font-size:26px;">{{ report.overview.total_score }}</span>
+      <span class="kpi-sub">points</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Taux de réussite moyen</span>
+      <span class="kpi-value" style="color:{% if report.overview.avg_success_rate >= 70 %}#16a34a{% elif report.overview.avg_success_rate >= 40 %}#d97706{% else %}#dc2626{% endif %};">
+        {{ report.overview.avg_success_rate }}%
+      </span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-label">Réponses correctes</span>
+      <span class="kpi-value" style="font-size:22px;">{{ report.overview.total_correct }}</span>
+      <span class="kpi-sub">sur {{ report.overview.total_questions }}</span>
+    </div>
+  </div>
+
+  <!-- Best session highlight ──────────────────────────────────── -->
+  {% if report.overview.best_session %}
+  {% set best = report.overview.best_session %}
+  <div class="highlight-card">
+    <div class="hi-icon">⭐</div>
+    <div class="hi-body">
+      <h4>Meilleure performance — {{ best.success_rate }}% de réussite</h4>
+      <p>
+        {{ best.quiz_title or 'Quiz' }} &nbsp;·&nbsp;
+        {{ best.started_at[:10] if best.started_at else '?' }} &nbsp;·&nbsp;
+        {{ best.total_score }} pts
+        {% if best.rank %}&nbsp;·&nbsp; Rang {{ best.rank }}/{{ best.total_players }}{% endif %}
+      </p>
+    </div>
+    <a class="btn-link" href="/teacher/reports/{{ best.session_id }}" style="margin-left:auto;">Voir →</a>
+  </div>
+  {% endif %}
+
+  <!-- Charts ─────────────────────────────────────────────────── -->
+  <div class="chart-row">
+    <div class="chart-card">
+      <h3>📈 Progression — Score et taux de réussite par session</h3>
+      <canvas id="chartProgress" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>🎯 Distribution des performances</h3>
+      <canvas id="chartDist" height="220"></canvas>
+    </div>
+  </div>
+
+  <!-- Sessions history table ─────────────────────────────────── -->
+  <div class="chart-card">
+    <h3>📋 Historique des sessions</h3>
+    {% if report.sessions %}
+    <div style="overflow-x:auto;">
+      <table class="sess-table">
+        <thead>
+          <tr>
+            <th>Quiz</th>
+            <th>Date</th>
+            <th>Score</th>
+            <th>Taux réussite</th>
+            <th>Tps moyen</th>
+            <th>Rang</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in report.sessions %}
+          <tr>
+            <td>
+              <strong>{{ s.quiz_title or 'Quiz supprimé' }}</strong>
+              <br><code style="font-size:11px;color:#94a3b8;">{{ s.session_code }}</code>
+            </td>
+            <td style="color:#64748b;">{{ s.started_at[:10] if s.started_at else '—' }}</td>
+            <td>
+              <strong style="color:#4f46e5;font-size:16px;">{{ s.total_score }}</strong>
+              <span style="color:#94a3b8;font-size:12px;"> pts</span>
+            </td>
+            <td>
+              <div class="sr-bar">
+                <div class="sr-track">
+                  <div class="sr-fill{% if s.success_rate < 40 %} bad{% elif s.success_rate < 70 %} mid{% endif %}"
+                       style="width:{{ s.success_rate }}%;"></div>
+                </div>
+                <span class="badge {% if s.success_rate >= 70 %}badge-green{% elif s.success_rate >= 40 %}badge-amber{% else %}badge-red{% endif %}">
+                  {{ s.success_rate }}%
+                </span>
+              </div>
+            </td>
+            <td style="color:#64748b;">
+              {% if s.avg_response_seconds is not none %}{{ s.avg_response_seconds }}s{% else %}—{% endif %}
+            </td>
+            <td>
+              {% if s.rank %}
+              {% set medal = '🥇' if s.rank == 1 else '🥈' if s.rank == 2 else '🥉' if s.rank == 3 else '' %}
+              {% if medal %}
+              <span style="font-size:22px;">{{ medal }}</span>
+              {% else %}
+              <span class="rank-pill rn">{{ s.rank }}</span>
+              {% endif %}
+              <span style="font-size:12px;color:#94a3b8;margin-left:4px;">/ {{ s.total_players }}</span>
+              {% else %}
+              <span style="color:#94a3b8;">—</span>
+              {% endif %}
+            </td>
+            <td><a class="btn-link" href="/teacher/reports/{{ s.session_id }}">Voir →</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p style="color:#94a3b8;text-align:center;padding:20px 0;">Aucune session.</p>
+    {% endif %}
+  </div>
+
+  {% endif %}{# end sessions > 0 #}
+</main>
+
+<script>
+const RPT = {{ report | tojson }};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+Chart.defaults.font.family = "'Inter','Segoe UI',sans-serif";
+
+if (RPT.overview.total_sessions > 0) {
+  const sessions = RPT.sessions;
+  const labels = sessions.map((s, i) => {
+    const d = s.started_at ? s.started_at.slice(0, 10) : ('S' + (i + 1));
+    return (s.quiz_title || 'Quiz').slice(0, 16) + '\n' + d;
+  });
+
+  // Progress combo chart: bar (score) + line (success rate)
+  new Chart(document.getElementById('chartProgress'), {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Score',
+          data: sessions.map(s => s.total_score),
+          backgroundColor: sessions.map(s =>
+            s.success_rate >= 70 ? 'rgba(34,197,94,0.75)' :
+            s.success_rate >= 40 ? 'rgba(245,158,11,0.75)' : 'rgba(239,68,68,0.75)'),
+          borderRadius: 8,
+          yAxisID: 'y',
+        },
+        {
+          type: 'line',
+          label: 'Réussite (%)',
+          data: sessions.map(s => s.success_rate),
+          borderColor: '#6366f1', backgroundColor: 'transparent',
+          borderWidth: 2.5, pointRadius: 5, pointBackgroundColor: '#6366f1',
+          tension: 0.3, yAxisID: 'y2',
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'top' } },
+      scales: {
+        y:  { beginAtZero: true, position: 'left',  title: { display: true, text: 'Score' } },
+        y2: { beginAtZero: true, position: 'right', min: 0, max: 100,
+               grid: { drawOnChartArea: false },
+               title: { display: true, text: 'Réussite (%)' },
+               ticks: { callback: v => v + '%' } },
+      }
+    }
+  });
+
+  // Performance distribution doughnut
+  const buckets = [0, 0, 0, 0]; // <40, 40-69, 70-89, 90+
+  sessions.forEach(s => {
+    if (s.success_rate >= 90) buckets[3]++;
+    else if (s.success_rate >= 70) buckets[2]++;
+    else if (s.success_rate >= 40) buckets[1]++;
+    else buckets[0]++;
+  });
+  new Chart(document.getElementById('chartDist'), {
+    type: 'doughnut',
+    data: {
+      labels: ['< 40%', '40–69%', '70–89%', '≥ 90%'],
+      datasets: [{
+        data: buckets,
+        backgroundColor: ['#ef4444','#f59e0b','#22c55e','#6366f1'],
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true, cutout: '60%',
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: { callbacks: {
+          label: ctx => ` ${ctx.label} : ${ctx.raw} session${ctx.raw !== 1 ? 's' : ''}`
+        }}
+      }
+    }
+  });
+}
+</script>
+
+{% endblock %}

@@ -13,10 +13,7 @@
   </div>
   <div>
     <span id="score">0 pts</span>
-    {% if student %}
-      &middot; <a class="btn" href="/student/stats">Mes stats</a>
-    {% endif %}
-    &middot; <a class="btn" href="/leave">Quitter</a>
+    &middot; <a class="btn" href="/leave-all">Quitter</a>
   </div>
 </header>
 
@@ -83,8 +80,9 @@ function onMessage(ev) {
   else if (m.type === 'quiz_attached')   showQuizStarting();
   else if (m.type === 'random_quiz_complete') showRandomComplete(m);
   else if (m.type === 'quiz_reset') {
-    alert('Le quiz est terminé. Retour à la page de connexion.');
-    window.location.href = '/';
+    try { localStorage.clear(); } catch {}
+    try { sessionStorage.clear(); } catch {}
+    window.location.href = '/leave-all';
   }
 }
 
