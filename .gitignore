@@ -1,45 +1,19 @@
 # Python cache
 __pycache__/
 *.py[cod]
-*$py.class
 
-# Virtual environments
-venv/
-.env/
-.venv/
-
-# Database files
+# Database
 *.db
 *.sqlite3
 
-# Environment variables
-.env
-.env.*
-
-# IDE files
-.vscode/
-.idea/
-
-# Claude config
+# Claude
 .claude/
 
-# OS files
-.DS_Store
-Thumbs.db
+# Environment
+.env
+venv/
+.venv/
 
-# Logs
-*.log
-
-# Python build files
-build/
-dist/
-*.egg-info/
-
-# Pytest / coverage
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Temporary files
-*.tmp
-*.temp
+# IDE
+.vscode/
+.idea/
