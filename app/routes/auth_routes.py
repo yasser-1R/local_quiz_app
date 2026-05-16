@@ -25,8 +25,17 @@ def _render_join(request: Request, *, error: str = None, nickname: str = "", mod
             "error": error,
             "nickname": nickname,
             "connection_mode": mode,
+            "student": None,
         },
     )
+
+
+def _effective_error_mode(fallback: str) -> str:
+    """If the current session uses BOTH mode, return BOTH_SIGNUP or BOTH_LOGIN instead."""
+    s = session_service.get_current_session()
+    if s and s.get("connection_mode") == "BOTH":
+        return "BOTH_" + fallback  # BOTH_SIGNUP or BOTH_LOGIN
+    return fallback
 
 
 @router.post("/signup")
@@ -39,12 +48,13 @@ async def do_signup(
     avatar_accessory: str = Form(""),
 ):
     nickname = nickname.strip()[:20]
+    signup_mode = _effective_error_mode("SIGNUP")
     if not nickname:
-        return _render_join(request, error="Veuillez entrer un pseudo.", mode="SIGNUP")
+        return _render_join(request, error="Veuillez entrer un pseudo.", mode=signup_mode)
     if len(password) < 4:
         return _render_join(
             request, error="Mot de passe trop court (min. 4 caractères).",
-            nickname=nickname, mode="SIGNUP",
+            nickname=nickname, mode=signup_mode,
         )
 
     session = session_service.ensure_current_session()
@@ -52,21 +62,21 @@ async def do_signup(
         return _render_join(
             request,
             error="Un quiz est déjà en cours. Demandez au professeur de le terminer.",
-            mode="SIGNUP",
+            mode=signup_mode,
         )
 
     # Check nickname not taken in current session
     if player_service.nickname_taken(session["id"], nickname):
         return _render_join(
             request, error="Ce pseudo est déjà pris. Choisissez-en un autre.",
-            nickname=nickname, mode="SIGNUP",
+            nickname=nickname, mode=signup_mode,
         )
 
     # Check student account doesn't already exist
     if student_service.get_student_by_pseudo(nickname) is not None:
         return _render_join(
             request, error="Un compte existe déjà avec ce pseudo. Utilisez la connexion.",
-            nickname=nickname, mode="SIGNUP",
+            nickname=nickname, mode=signup_mode,
         )
 
     # Create persistent student account
@@ -113,12 +123,13 @@ async def do_login(
     password: str = Form(...),
 ):
     nickname = nickname.strip()[:20]
+    login_mode = _effective_error_mode("LOGIN")
 
     student = student_service.authenticate_student(nickname, password)
     if student is None:
         return _render_join(
             request, error="Pseudo ou mot de passe incorrect.",
-            nickname=nickname, mode="LOGIN",
+            nickname=nickname, mode=login_mode,
         )
 
     session = session_service.ensure_current_session()
@@ -126,7 +137,7 @@ async def do_login(
         return _render_join(
             request,
             error="Un quiz est déjà en cours. Demandez au professeur de le terminer.",
-            mode="LOGIN",
+            mode=login_mode,
         )
 
     # Use stored avatar for this student
@@ -138,7 +149,7 @@ async def do_login(
     if player_service.nickname_taken(session["id"], nickname):
         return _render_join(
             request, error="Vous êtes déjà dans cette session.",
-            nickname=nickname, mode="LOGIN",
+            nickname=nickname, mode=login_mode,
         )
 
     player = player_service.add_player(

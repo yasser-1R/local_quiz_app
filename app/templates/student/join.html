@@ -15,6 +15,83 @@
     <div class="blocked-dots"><span></span><span></span><span></span></div>
   </div>
 
+  {% elif mode in ('BOTH', 'BOTH_SIGNUP', 'BOTH_LOGIN') %}
+  <!-- ===== BOTH — student chooses inscription or connexion ===== -->
+  <div id="both-choice" {% if mode != 'BOTH' %}style="display:none;"{% endif %}>
+    <h1>👥 Rejoindre le quiz</h1>
+    <p class="muted">{{ app_title }}</p>
+    {% if error and mode == 'BOTH' %}<div class="error">{{ error }}</div>{% endif %}
+    <div style="display:flex;flex-direction:column;gap:14px;margin-top:28px;">
+      <button type="button" class="btn primary big full" onclick="showBothForm('signup')">📝 Inscription</button>
+      <button type="button" class="btn big full" onclick="showBothForm('login')">🔑 Connexion</button>
+    </div>
+  </div>
+
+  <div id="both-signup" {% if mode != 'BOTH_SIGNUP' %}style="display:none;"{% endif %}>
+    <button type="button" onclick="showBothForm(null)" style="background:none;border:none;cursor:pointer;color:#6366f1;font-size:14px;font-weight:600;padding:0;margin-bottom:16px;">← Retour</button>
+    <h1>📝 Créer un compte</h1>
+    <p class="muted">{{ app_title }}</p>
+    {% if error and mode == 'BOTH_SIGNUP' %}<div class="error">{{ error }}</div>{% endif %}
+    <div class="avatar-preview-wrap">
+      <div id="previewB" class="avatar-preview" style="background:#6366f1;">
+        <span id="previewCharB" class="avatar-char">🦊</span>
+        <span id="previewAccB" class="avatar-acc"></span>
+      </div>
+    </div>
+    <form method="post" action="/auth/signup">
+      <label>Pseudo</label>
+      <input name="nickname" autocomplete="off" maxlength="20" required
+             value="{{ nickname }}" placeholder="Choisissez un pseudo" />
+      <label>Mot de passe <span style="font-size:13px;opacity:.7;">(min. 4 caractères)</span></label>
+      <input type="password" name="password" required minlength="4"
+             placeholder="Choisissez un mot de passe" />
+      <h3 class="picker-title">Personnage</h3>
+      <div class="picker-grid" id="charGridB">
+        {% for ch in avatar_characters %}
+          <button type="button" class="picker-cell char-cell{% if loop.first %} selected{% endif %}"
+                  data-char="{{ ch }}">{{ ch }}</button>
+        {% endfor %}
+      </div>
+      <h3 class="picker-title">Couleur</h3>
+      <div class="color-row" id="colorRowB">
+        {% for c in avatar_colors %}
+          <button type="button" class="color-dot{% if loop.first %} selected{% endif %}"
+                  data-color="{{ c.value }}" style="background:{{ c.value }};"
+                  aria-label="{{ c.name }}"></button>
+        {% endfor %}
+      </div>
+      <h3 class="picker-title">Accessoire</h3>
+      <div class="picker-grid small" id="accGridB">
+        {% for a in avatar_accessories %}
+          <button type="button" class="picker-cell acc-cell{% if loop.first %} selected{% endif %}"
+                  data-acc="{{ a.value }}">
+            {% if a.value %}{{ a.value }}{% else %}∅{% endif %}
+          </button>
+        {% endfor %}
+      </div>
+      <input type="hidden" name="avatar_character" id="avatarCharB" value="{{ avatar_characters[0] }}" />
+      <input type="hidden" name="avatar_color" id="avatarColorB" value="{{ avatar_colors[0].value }}" />
+      <input type="hidden" name="avatar_accessory" id="avatarAccB" value="" />
+      <button class="btn primary full big" type="submit">Créer mon compte 🚀</button>
+      <button type="button" id="randomBtnB" class="btn full">🎲 Aléatoire</button>
+    </form>
+  </div>
+
+  <div id="both-login" {% if mode != 'BOTH_LOGIN' %}style="display:none;"{% endif %}>
+    <button type="button" onclick="showBothForm(null)" style="background:none;border:none;cursor:pointer;color:#6366f1;font-size:14px;font-weight:600;padding:0;margin-bottom:16px;">← Retour</button>
+    <h1>🔑 Connexion</h1>
+    <p class="muted">{{ app_title }}</p>
+    {% if error and mode == 'BOTH_LOGIN' %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="post" action="/auth/login">
+      <label>Pseudo</label>
+      <input name="nickname" autocomplete="off" maxlength="20" required autofocus
+             value="{{ nickname }}" placeholder="Votre pseudo" />
+      <label>Mot de passe</label>
+      <input type="password" name="password" required placeholder="Votre mot de passe" />
+      <button class="btn primary full big" type="submit">Entrer 🚪</button>
+    </form>
+  </div>
+
   {% elif mode == 'LOGIN' or mode == 'LOGIN_AUTOFILL' %}
   <!-- ===== LOGIN FORM ===== -->
   <h1>🔑 Connexion</h1>
@@ -198,6 +275,66 @@
 @keyframes dotBounce { 0%,80%,100% { transform: translateY(0); opacity: .5; } 40% { transform: translateY(-12px); opacity: 1; } }
 </style>
 
+{% if mode in ('BOTH', 'BOTH_SIGNUP', 'BOTH_LOGIN') %}
+<script>
+(function() {
+  const cGridB  = document.getElementById('charGridB');
+  const colRowB = document.getElementById('colorRowB');
+  const aGridB  = document.getElementById('accGridB');
+  const prevB   = document.getElementById('previewB');
+  const pCharB  = document.getElementById('previewCharB');
+  const pAccB   = document.getElementById('previewAccB');
+  const iCharB  = document.getElementById('avatarCharB');
+  const iColorB = document.getElementById('avatarColorB');
+  const iAccB   = document.getElementById('avatarAccB');
+
+  function pickB(parent, el, val, inp) {
+    parent.querySelectorAll('.selected').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    inp.value = val;
+    if (prevB) prevB.style.background = iColorB.value;
+    if (pCharB) pCharB.textContent = iCharB.value;
+    if (pAccB) pAccB.textContent = iAccB.value;
+  }
+
+  if (cGridB) cGridB.addEventListener('click', e => {
+    const b = e.target.closest('.char-cell'); if (!b) return;
+    pickB(cGridB, b, b.dataset.char, iCharB);
+  });
+  if (colRowB) colRowB.addEventListener('click', e => {
+    const b = e.target.closest('.color-dot'); if (!b) return;
+    pickB(colRowB, b, b.dataset.color, iColorB);
+  });
+  if (aGridB) aGridB.addEventListener('click', e => {
+    const b = e.target.closest('.acc-cell'); if (!b) return;
+    pickB(aGridB, b, b.dataset.acc, iAccB);
+  });
+
+  function rndB() {
+    const r = a => a[Math.floor(Math.random() * a.length)];
+    const chars  = cGridB  ? [...cGridB.querySelectorAll('.char-cell')]  : [];
+    const colors = colRowB ? [...colRowB.querySelectorAll('.color-dot')] : [];
+    const accs   = aGridB  ? [...aGridB.querySelectorAll('.acc-cell')]   : [];
+    if (chars.length)  pickB(cGridB,  r(chars),  r(chars).dataset.char,   iCharB);
+    if (colors.length) pickB(colRowB, r(colors), r(colors).dataset.color, iColorB);
+    if (accs.length)   pickB(aGridB,  r(accs),   r(accs).dataset.acc,     iAccB);
+  }
+  const rBtnB = document.getElementById('randomBtnB');
+  if (rBtnB) rBtnB.onclick = rndB;
+
+  window.showBothForm = function(type) {
+    document.getElementById('both-choice').style.display  = (type === null)     ? 'block' : 'none';
+    document.getElementById('both-signup').style.display  = (type === 'signup') ? 'block' : 'none';
+    document.getElementById('both-login').style.display   = (type === 'login')  ? 'block' : 'none';
+    if (type === 'signup') rndB();
+  };
+
+  // Auto-randomize on load if signup sub-form is already visible
+  if (document.getElementById('both-signup').style.display !== 'none') rndB();
+})();
+</script>
+{% endif %}
+
 {% if mode in ('GUEST', 'SIGNUP') %}
 <script>
   const charGrid  = document.getElementById('charGrid');
@@ -259,7 +396,8 @@
 <!-- Always-on mode polling: reload whenever teacher changes connection mode -->
 <script>
 (function() {
-  const currentMode = '{{ mode }}';
+  // Normalize BOTH_SIGNUP / BOTH_LOGIN → BOTH for server comparison
+  const currentMode = '{{ mode }}'.replace('_SIGNUP', '').replace('_LOGIN', '');
   function poll() {
     setTimeout(async () => {
       try {

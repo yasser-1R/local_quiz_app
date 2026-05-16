@@ -1,19 +1,56 @@
-# Python cache
+# =========================
+# Python cache files
+# =========================
 __pycache__/
-*.py[cod]
+*.pyc
+*.pyo
+*.pyd
 
-# Database
-*.db
-*.sqlite3
+# =========================
+# Node.js
+# =========================
+node_modules/
 
-# Claude
+# =========================
+# Reports / documents
+# =========================
+raport.docx
+rapport_final.docx
+
+# unpacked report folders
+raport_unpacked/
+rapport_unpacked2/
+
+# generated reports
+*.pdf
+*.docx
+
+# =========================
+# Reset / dangerous scripts
+# =========================
+reset.py
+reinit_database.py
+
+# =========================
+# Local IDE / config files
+# =========================
 .claude/
-
-# Environment
-.env
-venv/
-.venv/
-
-# IDE
 .vscode/
 .idea/
+
+# =========================
+# Environment files
+# =========================
+.env
+.env.*
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db

@@ -147,7 +147,7 @@ def update_settings(session_id: int, mode: str, connection_mode: str) -> None:
     """Update session mode and connection_mode (teacher can change before starting)."""
     if mode not in ("NORMAL", "RANDOM"):
         mode = "NORMAL"
-    if connection_mode not in ("BLOCKED", "GUEST", "SIGNUP", "LOGIN"):
+    if connection_mode not in ("BLOCKED", "GUEST", "SIGNUP", "LOGIN", "BOTH"):
         connection_mode = "BLOCKED"
     with db_cursor() as cur:
         cur.execute(

@@ -89,8 +89,8 @@ async def do_join(
     if connection_mode == "BLOCKED":
         return _error(request, nickname, "La session est verrouillée. Attendez le professeur.")
 
-    # SIGNUP and LOGIN modes must go through /auth/* endpoints
-    if connection_mode in ("SIGNUP", "LOGIN"):
+    # SIGNUP, LOGIN, and BOTH modes must go through /auth/* endpoints
+    if connection_mode in ("SIGNUP", "LOGIN", "BOTH"):
         return _error(
             request, nickname,
             "Ce mode de connexion nécessite un compte. Utilisez le formulaire ci-dessous.",

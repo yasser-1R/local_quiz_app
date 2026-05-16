@@ -71,7 +71,8 @@
         <strong>Bloqué</strong> : personne ne peut rejoindre (défaut).<br>
         <strong>Invité</strong> : pseudo + avatar, sans compte.<br>
         <strong>Inscription</strong> : création de compte avec mot de passe.<br>
-        <strong>Connexion</strong> : compte existant requis.
+        <strong>Connexion</strong> : compte existant requis.<br>
+        <strong>Inscription + Connexion</strong> : l'élève choisit lui-même.
       </p>
       <div class="mode-radio-group">
         <label class="mode-radio-label {% if not session.connection_mode or session.connection_mode == 'BLOCKED' %}active{% endif %}">
@@ -97,6 +98,12 @@
                  {% if session.connection_mode == 'LOGIN' %}checked{% endif %}
                  onchange="updateSettings()">
           <span>🔑 Connexion</span>
+        </label>
+        <label class="mode-radio-label {% if session.connection_mode == 'BOTH' %}active{% endif %}">
+          <input type="radio" name="conn_mode" value="BOTH"
+                 {% if session.connection_mode == 'BOTH' %}checked{% endif %}
+                 onchange="updateSettings()">
+          <span>🔀 Inscription + Connexion</span>
         </label>
       </div>
     </div>
